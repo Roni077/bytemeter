@@ -10,12 +10,12 @@ on:
   workflow_dispatch:
     inputs:
       build_debug:
-        description: 'Build Debug APK'
+        description: 'Build Debug APKs'
         required: true
         type: boolean
         default: true
       build_release:
-        description: 'Build Release APK'
+        description: 'Build Release APKs'
         required: true
         type: boolean
         default: true
@@ -67,33 +67,71 @@ jobs:
         run: flutter analyze --no-pub
 
       # =========================================================================
-      # Step 3: Build Debug APK
+      # Step 3: Build Debug Split APKs
       # =========================================================================
-      - name: Step 3 - Build Debug APK
+      - name: Step 3 - Build Debug Split APKs
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_debug }}
-        run: flutter build apk --debug
+        run: |
+          flutter build apk --debug --split-per-abi
+          cd build/app/outputs/flutter-apk/
+          # Exclude x86 / x86_64
+          rm -f *x86*.apk *x64*.apk
+          # Rename to bytemeter-<abi>-debug.apk
+          for f in app-*-debug.apk; do
+            if [ -f "$f" ]; then
+              mv "$f" "${f/app-/bytemeter-}"
+            fi
+          done
+          ls -la
 
-      - name: Upload Debug APK Artifact
+      - name: Upload Debug arm64-v8a APK Artifact
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_debug }}
         uses: actions/upload-artifact@v4
         with:
-          name: bytemeter-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: bytemeter-arm64-v8a-debug
+          path: build/app/outputs/flutter-apk/bytemeter-arm64-v8a-debug.apk
+          retention-days: 14
+
+      - name: Upload Debug armeabi-v7a APK Artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_debug }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bytemeter-armeabi-v7a-debug
+          path: build/app/outputs/flutter-apk/bytemeter-armeabi-v7a-debug.apk
           retention-days: 14
 
       # =========================================================================
-      # Step 4: Build Release APK
+      # Step 4: Build Release Split APKs
       # =========================================================================
-      - name: Step 4 - Build Release APK
+      - name: Step 4 - Build Release Split APKs
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_release }}
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release --split-per-abi
+          cd build/app/outputs/flutter-apk/
+          # Exclude x86 / x86_64
+          rm -f *x86*.apk *x64*.apk
+          # Rename to bytemeter-<abi>-release.apk
+          for f in app-*-release.apk; do
+            if [ -f "$f" ]; then
+              mv "$f" "${f/app-/bytemeter-}"
+            fi
+          done
+          ls -la
 
-      - name: Upload Release APK Artifact
+      - name: Upload Release arm64-v8a APK Artifact
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_release }}
         uses: actions/upload-artifact@v4
         with:
-          name: bytemeter-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: bytemeter-arm64-v8a-release
+          path: build/app/outputs/flutter-apk/bytemeter-arm64-v8a-release.apk
+          retention-days: 30
+
+      - name: Upload Release armeabi-v7a APK Artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bytemeter-armeabi-v7a-release
+          path: build/app/outputs/flutter-apk/bytemeter-armeabi-v7a-release.apk
           retention-days: 30
 
       # =========================================================================
@@ -110,4 +148,9 @@ jobs:
           echo "- **Java Version:** \`17\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Tests:** Passed ✅" >> $GITHUB_STEP_SUMMARY
           echo "- **Linter & Analyzer:** Clean ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- **Artifacts:** Uploaded to GitHub Actions Run 📦" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### 📦 Packaged APK Outputs (x64 Excluded):" >> $GITHUB_STEP_SUMMARY
+          echo "- \`bytemeter-arm64-v8a-release.apk\` (Modern 64-bit ARM)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`bytemeter-armeabi-v7a-release.apk\` (Legacy 32-bit ARM)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`bytemeter-arm64-v8a-debug.apk\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`bytemeter-armeabi-v7a-debug.apk\`" >> $GITHUB_STEP_SUMMARY
