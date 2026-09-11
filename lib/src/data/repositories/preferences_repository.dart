@@ -187,6 +187,20 @@ class PreferencesRepository {
     _emitUpdate(_currentPreferences.copyWith(overviewDefaultNetworkType: type));
   }
 
+  /// Resets all user preferences to factory defaults.
+  Future<void> resetToDefaults() async {
+    await _prefs.remove(AppConstants.prefSpeedUnitBits);
+    await _prefs.remove(AppConstants.prefMetricBase1000);
+    await _prefs.remove(AppConstants.prefThemeMode);
+    await _prefs.remove(AppConstants.prefEnableBlur);
+    await _prefs.remove(AppConstants.prefPersistentNotification);
+    await _prefs.remove(AppConstants.prefNotificationIconStyle);
+    await _prefs.remove(AppConstants.prefSilentSpeedThresholdKb);
+    await _prefs.remove(AppConstants.prefAodModeEnabled);
+    await _prefs.remove(AppConstants.prefOverviewDefaultType);
+    _emitUpdate(const UserPreferences());
+  }
+
   void dispose() {
     _stateController.close();
   }

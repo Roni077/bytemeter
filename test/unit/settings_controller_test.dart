@@ -165,5 +165,36 @@ void main() {
       expect(reqBattery, isTrue);
       expect(controller.state.isIgnoringBatteryOptimizations, isTrue);
     });
+
+    test('runDiagnosticSelfTest performs bridge latency check and updates state', () async {
+      final controller = SettingsController(prefsRepo: prefsRepo, bridge: bridge);
+      await controller.runDiagnosticSelfTest();
+
+      expect(controller.state.isDiagnosticRunning, isFalse);
+      expect(controller.state.diagnosticPingLatencyMs, isNotNull);
+      expect(controller.state.lastDiagnosticMessage, contains('Native Bridge OK'));
+    });
+
+    test('resetPreferencesToDefault resets state and repository to default values', () async {
+      final controller = SettingsController(prefsRepo: prefsRepo, bridge: bridge);
+
+      // Mutate settings first
+      await controller.setSpeedUnitType(SpeedUnitType.bits);
+      await controller.setThemeMode(ThemeModePreference.amoled);
+      await controller.setEnableBlur(false);
+
+      expect(controller.state.speedUnitType, equals(SpeedUnitType.bits));
+      expect(controller.state.themeMode, equals(ThemeModePreference.amoled));
+      expect(controller.state.enableBlur, isFalse);
+
+      // Reset
+      await controller.resetPreferencesToDefault();
+
+      expect(controller.state.speedUnitType, equals(SpeedUnitType.bytes));
+      expect(controller.state.themeMode, equals(ThemeModePreference.auto));
+      expect(controller.state.enableBlur, isTrue);
+      expect(prefsRepo.current.speedUnitType, equals(SpeedUnitType.bytes));
+    });
   });
 }
+

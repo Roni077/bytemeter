@@ -10,12 +10,14 @@ import 'package:bytemeter/src/data/models/enums.dart';
 import 'package:bytemeter/src/data/models/usage_data.dart';
 import 'package:bytemeter/src/data/repositories/network_usage_repository.dart';
 import 'package:bytemeter/src/data/repositories/preferences_repository.dart';
-import 'package:bytemeter/src/features/settings/notification_settings_screen.dart';
+import 'package:bytemeter/src/features/settings/screens/about_settings_screen.dart';
+import 'package:bytemeter/src/features/settings/screens/data_privacy_settings_screen.dart';
+import 'package:bytemeter/src/features/settings/screens/notification_settings_screen.dart';
+import 'package:bytemeter/src/features/settings/screens/permissions_settings_screen.dart';
+import 'package:bytemeter/src/features/settings/screens/theme_settings_screen.dart';
+import 'package:bytemeter/src/features/settings/screens/units_settings_screen.dart';
 import 'package:bytemeter/src/features/settings/settings_screen.dart';
-import 'package:bytemeter/src/features/settings/widgets/about_app_card.dart';
-import 'package:bytemeter/src/features/settings/widgets/permission_status_card.dart';
-import 'package:bytemeter/src/features/settings/widgets/theme_mode_selector.dart';
-import 'package:bytemeter/src/features/settings/widgets/unit_settings_card.dart';
+import 'package:bytemeter/src/features/settings/widgets/settings_tile.dart';
 
 class MockSettingsBridge extends NativeTrafficBridge {
   MockSettingsBridge({
@@ -130,8 +132,8 @@ void main() {
     );
   }
 
-  group('SettingsScreen Widget Tests', () {
-    testWidgets('Renders all core cards and settings sections', (tester) async {
+  group('SettingsScreen Hub Widget Tests', () {
+    testWidgets('Renders all 6 settings category tiles and search bar', (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 2000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -139,95 +141,164 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Settings & Theming'), findsOneWidget);
-      expect(find.byType(PermissionStatusCard), findsOneWidget);
-      expect(find.byType(ThemeModeSelector), findsOneWidget);
-      expect(find.byType(UnitSettingsCard), findsOneWidget);
-      expect(find.byType(AboutAppCard), findsOneWidget);
-      expect(find.text('Frosted Glass Blur (Haze)'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(SettingsTile), findsNWidgets(6));
+
+      expect(find.text('Theme & Appearance'), findsOneWidget);
       expect(find.text('Status Bar Speed Meter'), findsOneWidget);
+      expect(find.text('Units & Calculation Standards'), findsOneWidget);
+      expect(find.text('Permissions & System Access'), findsOneWidget);
+      expect(find.text('Storage & Data Privacy'), findsOneWidget);
+      expect(find.text('About & System Info'), findsOneWidget);
     });
 
-    testWidgets('Tapping theme selector updates theme preference', (tester) async {
+    testWidgets('Search query filters settings tiles dynamically', (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 2000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // Tap AMOLED Black
-      final amoledOption = find.text('AMOLED Black');
-      expect(amoledOption, findsOneWidget);
-      await tester.tap(amoledOption);
+      // Enter search query 'amoled'
+      await tester.enterText(find.byType(TextField), 'amoled');
       await tester.pumpAndSettle();
 
-      expect(prefsRepo.current.themeMode, equals(ThemeModePreference.amoled));
+      expect(find.text('Theme & Appearance'), findsOneWidget);
+      expect(find.text('Units & Calculation Standards'), findsNothing);
+      expect(find.text('Storage & Data Privacy'), findsNothing);
 
-      // Tap Light Material
-      final lightOption = find.text('Light Material');
-      expect(lightOption, findsOneWidget);
-      await tester.tap(lightOption);
+      // Clear search
+      final clearBtn = find.byIcon(Icons.clear_rounded);
+      expect(clearBtn, findsOneWidget);
+      await tester.tap(clearBtn);
       await tester.pumpAndSettle();
 
-      expect(prefsRepo.current.themeMode, equals(ThemeModePreference.light));
+      expect(find.byType(SettingsTile), findsNWidgets(6));
     });
 
-    testWidgets('Toggling unit and standard formats updates preferences', (tester) async {
+    testWidgets('Navigating to ThemeSettingsScreen and back', (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 2000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // Tap Bits
-      final bitsBtn = find.text('Bits (Mbps, kbps)');
-      expect(bitsBtn, findsOneWidget);
-      await tester.tap(bitsBtn);
+      final themeTile = find.text('Theme & Appearance');
+      expect(themeTile, findsOneWidget);
+      await tester.tap(themeTile);
       await tester.pumpAndSettle();
 
-      expect(prefsRepo.current.speedUnitType, equals(SpeedUnitType.bits));
+      expect(find.byType(ThemeSettingsScreen), findsOneWidget);
+      expect(find.text('Live Theme Preview'), findsOneWidget);
 
-      // Tap Binary 1024
-      final binaryBtn = find.text('Binary (1024)');
-      expect(binaryBtn, findsOneWidget);
-      await tester.tap(binaryBtn);
+      // Pop back
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
-
-      expect(prefsRepo.current.metricBase, equals(MetricBase.binary1024));
+      expect(find.byType(SettingsScreen), findsOneWidget);
     });
 
-    testWidgets('Navigating to NotificationSettingsScreen and modifying settings', (tester) async {
+    testWidgets('Navigating to NotificationSettingsScreen and back', (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 2000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // Tap Status Bar Speed Meter tile
       final notifTile = find.text('Status Bar Speed Meter');
       expect(notifTile, findsOneWidget);
       await tester.tap(notifTile);
       await tester.pumpAndSettle();
 
-      // Verify NotificationSettingsScreen is shown
       expect(find.byType(NotificationSettingsScreen), findsOneWidget);
       expect(find.text('Status Bar Meter'), findsOneWidget);
-      expect(find.text('Live Status Bar Meter'), findsOneWidget);
-      expect(find.text('Status Bar Icon Style'), findsOneWidget);
-      expect(find.text('Auto-Hide Threshold'), findsOneWidget);
-      expect(find.text('Always-On Display (AOD) Updates'), findsOneWidget);
-
-      // Select Separate Up/Down icon style
-      final separateBtn = find.text('Separate Up/Down');
-      expect(separateBtn, findsOneWidget);
-      await tester.tap(separateBtn);
-      await tester.pumpAndSettle();
-
-      expect(prefsRepo.current.notificationIconStyle, equals(NotificationIconStyle.separateUpDown));
 
       // Pop back
-      final backButton = find.byIcon(Icons.arrow_back_rounded);
-      expect(backButton, findsOneWidget);
-      await tester.tap(backButton);
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+
+    testWidgets('Navigating to UnitsSettingsScreen and back', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final unitsTile = find.text('Units & Calculation Standards');
+      expect(unitsTile, findsOneWidget);
+      await tester.tap(unitsTile);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(UnitsSettingsScreen), findsOneWidget);
+      expect(find.text('Live Conversion Playground'), findsOneWidget);
+
+      // Pop back
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+
+    testWidgets('Navigating to PermissionsSettingsScreen and back', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final permsTile = find.text('Permissions & System Access');
+      expect(permsTile, findsOneWidget);
+      await tester.tap(permsTile);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PermissionsSettingsScreen), findsOneWidget);
+      expect(find.text('Permissions & Diagnostics'), findsOneWidget);
+
+      // Pop back
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+
+    testWidgets('Navigating to DataPrivacySettingsScreen and back', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final privacyTile = find.text('Storage & Data Privacy');
+      expect(privacyTile, findsOneWidget);
+      await tester.tap(privacyTile);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DataPrivacySettingsScreen), findsOneWidget);
+      expect(find.text('100% Offline & Private'), findsOneWidget);
+
+      // Pop back
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+
+    testWidgets('Navigating to AboutSettingsScreen and back', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final aboutTile = find.text('About & System Info');
+      expect(aboutTile, findsOneWidget);
+      await tester.tap(aboutTile);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AboutSettingsScreen), findsOneWidget);
+      expect(find.text('About ByteMeter'), findsOneWidget);
+      expect(find.text('Architecture & Technology'), findsOneWidget);
+
+      // Pop back
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
     });

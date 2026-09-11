@@ -11,6 +11,9 @@ class SettingsState {
     this.isLoading = false,
     this.errorMessage,
     this.appVersion = '1.0.0',
+    this.diagnosticPingLatencyMs,
+    this.lastDiagnosticMessage,
+    this.isDiagnosticRunning = false,
   });
 
   final UserPreferences preferences;
@@ -20,6 +23,9 @@ class SettingsState {
   final bool isLoading;
   final String? errorMessage;
   final String appVersion;
+  final int? diagnosticPingLatencyMs;
+  final String? lastDiagnosticMessage;
+  final bool isDiagnosticRunning;
 
   SettingsState copyWith({
     UserPreferences? preferences,
@@ -30,6 +36,9 @@ class SettingsState {
     String? errorMessage,
     bool clearError = false,
     String? appVersion,
+    int? diagnosticPingLatencyMs,
+    String? lastDiagnosticMessage,
+    bool? isDiagnosticRunning,
   }) {
     return SettingsState(
       preferences: preferences ?? this.preferences,
@@ -40,6 +49,9 @@ class SettingsState {
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       appVersion: appVersion ?? this.appVersion,
+      diagnosticPingLatencyMs: diagnosticPingLatencyMs ?? this.diagnosticPingLatencyMs,
+      lastDiagnosticMessage: lastDiagnosticMessage ?? this.lastDiagnosticMessage,
+      isDiagnosticRunning: isDiagnosticRunning ?? this.isDiagnosticRunning,
     );
   }
 

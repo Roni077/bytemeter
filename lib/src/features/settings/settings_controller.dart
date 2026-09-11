@@ -140,6 +140,42 @@ class SettingsController extends StateNotifier<SettingsState> {
     await refreshPermissionStatuses();
     return result;
   }
+
+  /// Runs a live roundtrip diagnostic ping to test native bridge communication.
+  Future<void> runDiagnosticSelfTest() async {
+    state = state.copyWith(isDiagnosticRunning: true);
+    final stopwatch = Stopwatch()..start();
+    try {
+      final hasPerm = await bridge.hasUsagePermission();
+      final serviceRunning = await bridge.isServiceRunning();
+      final ignoringBattery = await bridge.isIgnoringBatteryOptimizations();
+      stopwatch.stop();
+      final latency = stopwatch.elapsedMilliseconds;
+
+      state = state.copyWith(
+        hasUsagePermission: hasPerm,
+        isServiceRunning: serviceRunning,
+        isIgnoringBatteryOptimizations: ignoringBattery,
+        diagnosticPingLatencyMs: latency,
+        lastDiagnosticMessage:
+            'Native Bridge OK · ${latency}ms roundtrip · Service: ${serviceRunning ? "Active" : "Idle"}',
+        isDiagnosticRunning: false,
+      );
+    } catch (e) {
+      stopwatch.stop();
+      state = state.copyWith(
+        diagnosticPingLatencyMs: stopwatch.elapsedMilliseconds,
+        lastDiagnosticMessage: 'Diagnostic error: $e',
+        isDiagnosticRunning: false,
+      );
+    }
+  }
+
+  /// Resets all preferences to factory defaults.
+  Future<void> resetPreferencesToDefault() async {
+    await prefsRepo.resetToDefaults();
+    state = state.copyWith(preferences: prefsRepo.current);
+  }
 }
 
 /// Riverpod StateNotifierProvider for [SettingsController].
