@@ -1,6 +1,6 @@
-package com.bytemeter.network.bytemeter
+package com.bytemeter.network
 
-import com.bytemeter.network.bytemeter.bridge.ByteMeterPlatformBridge
+import com.bytemeter.network.bridge.ByteMeterPlatformBridge
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import kotlinx.coroutines.CoroutineScope

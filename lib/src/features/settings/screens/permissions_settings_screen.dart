@@ -49,31 +49,28 @@ class PermissionsSettingsScreen extends ConsumerWidget {
                   Navigator.of(context).pop();
                 },
               ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Re-check Permissions',
-                  onPressed: () {
-                    AppHaptics.contextClick();
-                    controller.refreshPermissionStatuses();
-                  },
-                ),
-                const SizedBox(width: 8),
+              actions: const [
+                SizedBox(width: 8),
               ],
             ),
           ),
         ),
       ),
-      body: ListView(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-          bottom: MediaQuery.of(context).padding.bottom + 24,
-        ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          AppHaptics.selectionTick();
+          await controller.refreshPermissionStatuses();
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
+            bottom: MediaQuery.of(context).padding.bottom + 24,
+          ),
         children: [
           // 1. Overall System Health Card
           Container(
@@ -241,6 +238,7 @@ class PermissionsSettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

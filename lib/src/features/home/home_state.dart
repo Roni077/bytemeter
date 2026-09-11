@@ -5,10 +5,10 @@ import '../../data/models/usage_data.dart';
 import '../charts/app_usage_bar_chart.dart';
 import '../charts/weekly_bar_chart.dart';
 
-/// Immutable UI state for the ByteMeter Overview dashboard.
+/// Immutable UI state for the ByteMeter Home dashboard.
 @immutable
-class OverviewState {
-  OverviewState({
+class HomeState {
+  HomeState({
     this.selectedNetworkType = NetworkType.mobile,
     UsageData? todayUsage,
     this.predictedBytes = 0,
@@ -74,7 +74,7 @@ class OverviewState {
   int get totalWeekWifiBytes =>
       weekData.fold<int>(0, (sum, day) => sum + day.wifiBytes);
 
-  OverviewState copyWith({
+  HomeState copyWith({
     NetworkType? selectedNetworkType,
     UsageData? todayUsage,
     int? predictedBytes,
@@ -89,7 +89,7 @@ class OverviewState {
     String? errorMessage,
     bool clearError = false,
   }) {
-    return OverviewState(
+    return HomeState(
       selectedNetworkType: selectedNetworkType ?? this.selectedNetworkType,
       todayUsage: todayUsage ?? this.todayUsage,
       predictedBytes: predictedBytes ?? this.predictedBytes,
@@ -107,7 +107,7 @@ class OverviewState {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is OverviewState &&
+      other is HomeState &&
           runtimeType == other.runtimeType &&
           selectedNetworkType == other.selectedNetworkType &&
           todayUsage == other.todayUsage &&
@@ -138,6 +138,9 @@ class OverviewState {
 
   @override
   String toString() {
-    return 'OverviewState(network: $selectedNetworkType, today: $todayUsage, predicted: $predictedBytes, trend: $trendPercentage%, loading: $isLoading)';
+    return 'HomeState(network: $selectedNetworkType, today: $todayUsage, predicted: $predictedBytes, trend: $trendPercentage%, loading: $isLoading)';
   }
 }
+
+/// Backward compatibility alias
+typedef OverviewState = HomeState;

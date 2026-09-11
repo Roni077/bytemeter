@@ -250,7 +250,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Overview'), findsWidgets);
+      expect(find.text('Home'), findsWidgets);
 
       // Tap Plans tab in bottom navigation bar
       final plansNav = find.text('Plans');

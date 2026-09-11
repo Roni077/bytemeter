@@ -63,5 +63,6 @@ class SettingsState {
   NotificationIconStyle get notificationIconStyle => preferences.notificationIconStyle;
   int get silentSpeedThresholdKb => preferences.silentSpeedThresholdKb;
   bool get aodModeEnabled => preferences.aodModeEnabled;
-  NetworkType get overviewDefaultNetworkType => preferences.overviewDefaultNetworkType;
+  NetworkType get homeDefaultNetworkType => preferences.homeDefaultNetworkType;
+  NetworkType get overviewDefaultNetworkType => preferences.homeDefaultNetworkType;
 }

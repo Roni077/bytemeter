@@ -172,7 +172,7 @@ void main() {
       expect(wifiBtn, findsOneWidget);
       await tester.tap(wifiBtn);
       await tester.pumpAndSettle();
-      expect(prefsRepo.current.overviewDefaultNetworkType, equals(NetworkType.wifi));
+      expect(prefsRepo.current.homeDefaultNetworkType, equals(NetworkType.wifi));
 
       // Tap Playground preset
       final preset500mb = find.text('500 MB');

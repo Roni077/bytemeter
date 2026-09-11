@@ -1,4 +1,4 @@
-package com.bytemeter.network.bytemeter.bridge
+package com.bytemeter.network.bridge
 
 object ChannelConstants {
     const val METHOD_CHANNEL_NAME = "com.bytemeter/bridge"

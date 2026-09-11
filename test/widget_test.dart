@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bytemeter/main.dart';
 import 'package:bytemeter/src/core/providers/core_providers.dart';
-import 'package:bytemeter/src/features/overview/overview_screen.dart';
+import 'package:bytemeter/src/features/home/home_screen.dart';
 
 void main() {
   testWidgets('ByteMeterApp smoke test', (WidgetTester tester) async {
@@ -20,6 +20,6 @@ void main() {
     );
 
     await tester.pump();
-    expect(find.byType(OverviewScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 }

@@ -22,6 +22,7 @@ class AppConstants {
   static const String prefNotificationIconStyle = 'notification_icon_style';
   static const String prefSilentSpeedThresholdKb = 'silent_speed_threshold_kb';
   static const String prefAodModeEnabled = 'aod_mode_enabled';
+  static const String prefHomeDefaultType = 'home_default_type';
   static const String prefOverviewDefaultType = 'overview_default_type';
 
   // Database

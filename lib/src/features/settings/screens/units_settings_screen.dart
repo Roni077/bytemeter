@@ -65,10 +65,10 @@ class UnitsSettingsScreen extends ConsumerWidget {
           UnitSettingsCard(
             speedUnitType: prefs.speedUnitType,
             metricBase: prefs.metricBase,
-            defaultNetworkType: prefs.overviewDefaultNetworkType,
+            defaultNetworkType: prefs.homeDefaultNetworkType,
             onSpeedUnitChanged: (unit) => controller.setSpeedUnitType(unit),
             onMetricBaseChanged: (base) => controller.setMetricBase(base),
-            onDefaultNetworkChanged: (type) => controller.setOverviewDefaultNetworkType(type),
+            onDefaultNetworkChanged: (type) => controller.setHomeDefaultNetworkType(type),
           ),
 
           const SizedBox(height: 16),

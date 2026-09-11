@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/core_providers.dart';
 import '../../core/utils/data_size.dart';
 import '../../core/utils/haptics.dart';
-import 'overview_controller.dart';
+import 'home_controller.dart';
 import 'widgets/hero_geometric_gauge.dart';
 import 'widgets/network_type_selector.dart';
 import 'widgets/permission_banner.dart';
@@ -13,26 +13,22 @@ import 'widgets/top_apps_card.dart';
 import 'widgets/trend_card.dart';
 import 'widgets/weekly_chart_card.dart';
 
-/// Main interactive Overview Dashboard screen featuring live speed monitoring,
+/// Main interactive Home Dashboard screen featuring live speed monitoring,
 /// 12-sided geometric cookie Hero gauge, predictive burn-rate cards, and weekly breakdown.
-class OverviewScreen extends ConsumerStatefulWidget {
-  const OverviewScreen({
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({
     super.key,
-    this.onOpenSettings,
     this.scrollController,
   });
-
-  /// Optional callback to navigate to the settings screen.
-  final VoidCallback? onOpenSettings;
 
   /// Optional scroll controller to coordinate scroll-to-top actions.
   final ScrollController? scrollController;
 
   @override
-  ConsumerState<OverviewScreen> createState() => _OverviewScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _OverviewScreenState extends ConsumerState<OverviewScreen>
+class _HomeScreenState extends ConsumerState<HomeScreen>
     with WidgetsBindingObserver {
   @override
   void initState() {
@@ -50,7 +46,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       // Re-check permissions and refresh data when app returns to foreground
-      ref.read(overviewControllerProvider.notifier).loadDashboardData();
+      ref.read(homeControllerProvider.notifier).loadDashboardData();
     }
   }
 
@@ -58,14 +54,14 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final overviewState = ref.watch(overviewControllerProvider);
-    final controller = ref.read(overviewControllerProvider.notifier);
+    final homeState = ref.watch(homeControllerProvider);
+    final controller = ref.read(homeControllerProvider.notifier);
     final prefsRepo = ref.watch(preferencesRepositoryProvider);
     final prefs = prefsRepo.current;
 
     // Listen to real-time speed stream from platform bridge
     final liveSpeedAsync = ref.watch(speedStreamProvider);
-    final liveSnapshot = liveSpeedAsync.valueOrNull ?? overviewState.currentSpeed;
+    final liveSnapshot = liveSpeedAsync.valueOrNull ?? homeState.currentSpeed;
 
     // Format live transfer speed for secondary badge
     final upSpeedFormatted = DataSize(liveSnapshot.uploadBytesPerSec).format(
@@ -119,25 +115,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
                   ),
                 ],
               ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Refresh Metrics',
-                  onPressed: () {
-                    AppHaptics.contextClick();
-                    controller.loadDashboardData(refresh: true);
-                  },
-                ),
-                if (widget.onOpenSettings != null)
-                  IconButton(
-                    icon: const Icon(Icons.settings_outlined),
-                    tooltip: 'Settings',
-                    onPressed: () {
-                      AppHaptics.contextClick();
-                      widget.onOpenSettings?.call();
-                    },
-                  ),
-                const SizedBox(width: 8),
+              actions: const [
+                SizedBox(width: 8),
               ],
             ),
           ),
@@ -161,7 +140,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
           ),
           children: [
             // Permission Alert Banner (if usage access missing)
-            if (!overviewState.hasUsagePermission) ...[
+            if (!homeState.hasUsagePermission) ...[
               PermissionBanner(
                 onRequestPermission: () => controller.requestUsagePermission(),
               ),
@@ -170,7 +149,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
 
             // Network Selector Pill Toggle (Mobile vs Wi-Fi)
             NetworkTypeSelector(
-              selectedType: overviewState.selectedNetworkType,
+              selectedType: homeState.selectedNetworkType,
               onChanged: (newType) => controller.setNetworkType(newType),
             ),
             const SizedBox(height: 20),
@@ -178,8 +157,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
             // Hero 12-Sided Geometric Cookie Gauge with Live Speed Badge
             Center(
               child: HeroGeometricGauge(
-                dataSize: DataSize(overviewState.todayUsage.totalBytes),
-                networkType: overviewState.selectedNetworkType,
+                dataSize: DataSize(homeState.todayUsage.totalBytes),
+                networkType: homeState.selectedNetworkType,
                 label: "TODAY'S USAGE",
                 secondaryLabel: secondarySpeedLabel,
                 size: 280,
@@ -197,15 +176,15 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
               children: [
                 Expanded(
                   child: PredictionCard(
-                    predictedBytes: overviewState.predictedBytes,
-                    todayBytes: overviewState.todayUsage.totalBytes,
+                    predictedBytes: homeState.predictedBytes,
+                    todayBytes: homeState.todayUsage.totalBytes,
                     metricBase: prefs.metricBase,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TrendCard(
-                    trendPercentage: overviewState.trendPercentage,
+                    trendPercentage: homeState.trendPercentage,
                   ),
                 ),
               ],
@@ -214,8 +193,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
 
             // Top Data-Consuming Apps Today
             TopAppsCard(
-              apps: overviewState.topApps,
-              totalBytes: overviewState.todayUsage.totalBytes,
+              apps: homeState.topApps,
+              totalBytes: homeState.todayUsage.totalBytes,
               onAppTap: (app) {
                 AppHaptics.contextClick();
                 if (app.packageName.isNotEmpty && !app.packageName.startsWith('uid_')) {
@@ -227,8 +206,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
 
             // Weekly Mon-Sun Interactive Stacked Bar Chart
             WeeklyChartCard(
-              weekData: overviewState.weekData,
-              selectedDayIndex: overviewState.selectedDayIndex,
+              weekData: homeState.weekData,
+              selectedDayIndex: homeState.selectedDayIndex,
               metricBase: prefs.metricBase,
               onDaySelected: (index, data) {
                 AppHaptics.contextClick();
@@ -241,3 +220,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
     );
   }
 }
+
+/// Backward compatibility alias
+typedef OverviewScreen = HomeScreen;

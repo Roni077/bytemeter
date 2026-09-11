@@ -1,4 +1,4 @@
-package com.bytemeter.network.bytemeter.bridge
+package com.bytemeter.network.bridge
 
 import android.app.AppOpsManager
 import android.content.Context
@@ -11,11 +11,11 @@ import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
-import com.bytemeter.network.bytemeter.crypto.CryptoManager
-import com.bytemeter.network.bytemeter.services.ByteMeterForegroundService
-import com.bytemeter.network.bytemeter.services.TrafficSnapshot
-import com.bytemeter.network.bytemeter.stats.AppListHelper
-import com.bytemeter.network.bytemeter.stats.NetworkStatsHelper
+import com.bytemeter.network.crypto.CryptoManager
+import com.bytemeter.network.services.ByteMeterForegroundService
+import com.bytemeter.network.services.TrafficSnapshot
+import com.bytemeter.network.stats.AppListHelper
+import com.bytemeter.network.stats.NetworkStatsHelper
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall

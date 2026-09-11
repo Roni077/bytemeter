@@ -39,12 +39,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
       expect(find.text('Plans'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
 
-      expect(find.byIcon(Icons.bolt_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.home_rounded), findsOneWidget);
       expect(find.byIcon(Icons.bar_chart_outlined), findsOneWidget);
       expect(find.byIcon(Icons.credit_card_outlined), findsOneWidget);
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);

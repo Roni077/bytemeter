@@ -10,14 +10,14 @@ import 'package:bytemeter/src/data/models/enums.dart';
 import 'package:bytemeter/src/data/models/usage_data.dart';
 import 'package:bytemeter/src/data/repositories/network_usage_repository.dart';
 import 'package:bytemeter/src/data/repositories/preferences_repository.dart';
-import 'package:bytemeter/src/features/overview/overview_screen.dart';
-import 'package:bytemeter/src/features/overview/widgets/hero_geometric_gauge.dart';
-import 'package:bytemeter/src/features/overview/widgets/network_type_selector.dart';
-import 'package:bytemeter/src/features/overview/widgets/permission_banner.dart';
-import 'package:bytemeter/src/features/overview/widgets/prediction_card.dart';
-import 'package:bytemeter/src/features/overview/widgets/top_apps_card.dart';
-import 'package:bytemeter/src/features/overview/widgets/trend_card.dart';
-import 'package:bytemeter/src/features/overview/widgets/weekly_chart_card.dart';
+import 'package:bytemeter/src/features/home/home_screen.dart';
+import 'package:bytemeter/src/features/home/widgets/hero_geometric_gauge.dart';
+import 'package:bytemeter/src/features/home/widgets/network_type_selector.dart';
+import 'package:bytemeter/src/features/home/widgets/permission_banner.dart';
+import 'package:bytemeter/src/features/home/widgets/prediction_card.dart';
+import 'package:bytemeter/src/features/home/widgets/top_apps_card.dart';
+import 'package:bytemeter/src/features/home/widgets/trend_card.dart';
+import 'package:bytemeter/src/features/home/widgets/weekly_chart_card.dart';
 
 class MockBridge extends NativeTrafficBridge {
   MockBridge({this.hasPerm = true});
@@ -105,12 +105,12 @@ void main() {
         ),
       ],
       child: const MaterialApp(
-        home: OverviewScreen(),
+        home: HomeScreen(),
       ),
     );
   }
 
-  testWidgets('OverviewScreen renders full dashboard components', (WidgetTester tester) async {
+  testWidgets('HomeScreen renders full dashboard components', (WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

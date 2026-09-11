@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bytemeter/src/core/theme/app_theme.dart';
 import 'package:bytemeter/src/core/utils/data_size.dart';
 import 'package:bytemeter/src/data/models/enums.dart';
-import 'package:bytemeter/src/features/overview/widgets/hero_geometric_gauge.dart';
+import 'package:bytemeter/src/features/home/widgets/hero_geometric_gauge.dart';
 import 'package:bytemeter/src/features/charts/weekly_bar_chart.dart';
 import 'package:bytemeter/src/features/charts/scrollable_bar_chart.dart';
 import 'package:bytemeter/src/features/charts/comparative_line_chart.dart';

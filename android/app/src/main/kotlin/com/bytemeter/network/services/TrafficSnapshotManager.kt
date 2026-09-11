@@ -1,4 +1,4 @@
-package com.bytemeter.network.bytemeter.services
+package com.bytemeter.network.services
 
 import android.content.Context
 import android.net.ConnectivityManager

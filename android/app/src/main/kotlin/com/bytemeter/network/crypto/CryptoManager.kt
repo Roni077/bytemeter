@@ -1,4 +1,4 @@
-package com.bytemeter.network.bytemeter.crypto
+package com.bytemeter.network.crypto
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties

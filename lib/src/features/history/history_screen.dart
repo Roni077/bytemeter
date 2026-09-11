@@ -93,14 +93,6 @@ class HistoryScreen extends ConsumerWidget {
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Refresh Timeline',
-                  onPressed: () {
-                    AppHaptics.contextClick();
-                    controller.loadInitialData(refresh: true);
-                  },
-                ),
-                IconButton(
                   icon: const Icon(Icons.tune_rounded),
                   tooltip: 'Filter Queries',
                   onPressed: () {

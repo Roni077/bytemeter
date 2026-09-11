@@ -118,7 +118,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     final showUnits = matchesQuery(
       'Units & Calculation Standards',
-      '$unitModeLabel · $metricBaseLabel · Default ${prefs.overviewDefaultNetworkType.name}',
+      '$unitModeLabel · $metricBaseLabel · Default ${prefs.homeDefaultNetworkType.name}',
       ['units', 'bytes', 'bits', 'mbps', 'mb/s', 'decimal', 'binary', '1000', '1024', 'calculator'],
     );
 
@@ -177,32 +177,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 ],
               ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Refresh Statuses',
-                  onPressed: () {
-                    AppHaptics.contextClick();
-                    controller.refreshPermissionStatuses();
-                  },
-                ),
-                const SizedBox(width: 8),
+              actions: const [
+                SizedBox(width: 8),
               ],
             ),
           ),
         ),
       ),
-      body: ListView(
-        controller: widget.scrollController,
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-          bottom: MediaQuery.of(context).padding.bottom + 96,
-        ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          AppHaptics.selectionTick();
+          await controller.refreshPermissionStatuses();
+        },
+        child: ListView(
+          controller: widget.scrollController,
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
+            bottom: MediaQuery.of(context).padding.bottom + 96,
+          ),
         children: [
           // 1. Instant Settings Search / Filter Bar
           TextField(
@@ -336,7 +333,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               iconBackgroundColor: colorScheme.tertiaryContainer,
               iconColor: colorScheme.onTertiaryContainer,
               title: 'Units & Calculation Standards',
-              subtitle: '$unitModeLabel · $metricBaseLabel · Default ${prefs.overviewDefaultNetworkType.name == "mobile" ? "Cellular" : "Wi-Fi"}',
+              subtitle: '$unitModeLabel · $metricBaseLabel · Default ${prefs.homeDefaultNetworkType.name == "mobile" ? "Cellular" : "Wi-Fi"}',
               trailingBadge: '${prefs.speedUnitType == SpeedUnitType.bits ? "Bits" : "Bytes"} · ${prefs.metricBase.baseValue}',
               onTap: () {
                 Navigator.of(context).push(
@@ -447,6 +444,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ],
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

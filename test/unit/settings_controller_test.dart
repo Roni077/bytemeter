@@ -111,8 +111,8 @@ void main() {
       expect(controller.state.metricBase, equals(MetricBase.binary1024));
       expect(prefsRepo.current.metricBase, equals(MetricBase.binary1024));
 
-      await controller.setOverviewDefaultNetworkType(NetworkType.wifi);
-      expect(controller.state.overviewDefaultNetworkType, equals(NetworkType.wifi));
+      await controller.setHomeDefaultNetworkType(NetworkType.wifi);
+      expect(controller.state.homeDefaultNetworkType, equals(NetworkType.wifi));
     });
 
     test('Modifying theme mode and blur updates state', () async {

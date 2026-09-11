@@ -7,7 +7,7 @@ import 'package:bytemeter/src/data/models/traffic_snapshot.dart';
 import 'package:bytemeter/src/data/models/usage_data.dart';
 import 'package:bytemeter/src/data/repositories/network_usage_repository.dart';
 import 'package:bytemeter/src/data/repositories/preferences_repository.dart';
-import 'package:bytemeter/src/features/overview/overview_controller.dart';
+import 'package:bytemeter/src/features/home/home_controller.dart';
 
 class FakeNativeBridge extends NativeTrafficBridge {
   FakeNativeBridge({
@@ -108,9 +108,9 @@ void main() {
     prefsRepo = PreferencesRepository(prefs: prefs, bridge: bridge);
   });
 
-  group('OverviewController - Mathematical Models & Analytics', () {
+  group('HomeController - Mathematical Models & Analytics', () {
     test('4-Week Weighted Prediction with Historical Data', () async {
-      final controller = OverviewController(
+      final controller = HomeController(
         usageRepo: usageRepo,
         prefsRepo: prefsRepo,
       );
@@ -131,7 +131,7 @@ void main() {
     test('4-Week Weighted Prediction with zero historical data falls back to linear time extrapolation', () async {
       final emptyBridge = FakeNativeBridge(deviceUsageTotal: 0);
       final emptyUsageRepo = NetworkUsageRepository(bridge: emptyBridge);
-      final controller = OverviewController(
+      final controller = HomeController(
         usageRepo: emptyUsageRepo,
         prefsRepo: prefsRepo,
       );
@@ -150,7 +150,7 @@ void main() {
     });
 
     test('7-Day Moving Trend Percentage Calculation', () async {
-      final controller = OverviewController(
+      final controller = HomeController(
         usageRepo: usageRepo,
         prefsRepo: prefsRepo,
       );
@@ -165,8 +165,8 @@ void main() {
       expect(trend, isA<double>());
     });
 
-    test('OverviewController loads state, handles network changes, and selects day', () async {
-      final controller = OverviewController(
+    test('HomeController loads state, handles network changes, and selects day', () async {
+      final controller = HomeController(
         usageRepo: usageRepo,
         prefsRepo: prefsRepo,
       );

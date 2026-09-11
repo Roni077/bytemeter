@@ -69,14 +69,7 @@ class DataPlansScreen extends ConsumerWidget {
               _openPlanConfig(context, ref, slotIndex: nextSlotIndex);
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Plans',
-            onPressed: () {
-              AppHaptics.selectionTick();
-              controller.refresh();
-            },
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(

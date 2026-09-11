@@ -137,9 +137,9 @@ class UnitSettingsCard extends StatelessWidget {
 
             const Divider(height: 28),
 
-            // 3. Default Overview Network Type
+            // 3. Default Home Network Type
             Text(
-              'Default Overview Interface',
+              'Default Home Interface',
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),

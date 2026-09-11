@@ -40,10 +40,10 @@ class ModernBottomNavBar extends ConsumerWidget {
   /// Default 4 core navigation destinations for ByteMeter.
   static const List<ModernNavItemData> defaultItems = [
     ModernNavItemData(
-      label: 'Overview',
-      outlinedIcon: Icons.bolt_outlined,
-      selectedIcon: Icons.bolt_rounded,
-      tooltip: 'Live Speed & Overview',
+      label: 'Home',
+      outlinedIcon: Icons.home_outlined,
+      selectedIcon: Icons.home_rounded,
+      tooltip: 'Home & Live Speed',
     ),
     ModernNavItemData(
       label: 'History',

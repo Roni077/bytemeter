@@ -15,7 +15,7 @@ class UserPreferences {
     this.notificationIconStyle = NotificationIconStyle.combined,
     this.silentSpeedThresholdKb = 0,
     this.aodModeEnabled = false,
-    this.overviewDefaultNetworkType = NetworkType.mobile,
+    this.homeDefaultNetworkType = NetworkType.mobile,
   });
 
   final SpeedUnitType speedUnitType;
@@ -26,7 +26,10 @@ class UserPreferences {
   final NotificationIconStyle notificationIconStyle;
   final int silentSpeedThresholdKb;
   final bool aodModeEnabled;
-  final NetworkType overviewDefaultNetworkType;
+  final NetworkType homeDefaultNetworkType;
+
+  /// Backward-compatible alias
+  NetworkType get overviewDefaultNetworkType => homeDefaultNetworkType;
 
   UserPreferences copyWith({
     SpeedUnitType? speedUnitType,
@@ -37,6 +40,7 @@ class UserPreferences {
     NotificationIconStyle? notificationIconStyle,
     int? silentSpeedThresholdKb,
     bool? aodModeEnabled,
+    NetworkType? homeDefaultNetworkType,
     NetworkType? overviewDefaultNetworkType,
   }) {
     return UserPreferences(
@@ -49,8 +53,9 @@ class UserPreferences {
       notificationIconStyle: notificationIconStyle ?? this.notificationIconStyle,
       silentSpeedThresholdKb: silentSpeedThresholdKb ?? this.silentSpeedThresholdKb,
       aodModeEnabled: aodModeEnabled ?? this.aodModeEnabled,
-      overviewDefaultNetworkType:
-          overviewDefaultNetworkType ?? this.overviewDefaultNetworkType,
+      homeDefaultNetworkType: homeDefaultNetworkType ??
+          overviewDefaultNetworkType ??
+          this.homeDefaultNetworkType,
     );
   }
 }
@@ -85,7 +90,9 @@ class PreferencesRepository {
     final iconStyleStr = _prefs.getString(AppConstants.prefNotificationIconStyle) ?? 'combined';
     final silentKb = _prefs.getInt(AppConstants.prefSilentSpeedThresholdKb) ?? 0;
     final aod = _prefs.getBool(AppConstants.prefAodModeEnabled) ?? false;
-    final overviewTypeStr = _prefs.getString(AppConstants.prefOverviewDefaultType) ?? 'mobile';
+    final homeTypeStr = _prefs.getString(AppConstants.prefHomeDefaultType) ??
+        _prefs.getString(AppConstants.prefOverviewDefaultType) ??
+        'mobile';
 
     return UserPreferences(
       speedUnitType: speedUnitBits ? SpeedUnitType.bits : SpeedUnitType.bytes,
@@ -102,8 +109,8 @@ class PreferencesRepository {
       ),
       silentSpeedThresholdKb: silentKb,
       aodModeEnabled: aod,
-      overviewDefaultNetworkType: NetworkType.values.firstWhere(
-        (e) => e.name == overviewTypeStr,
+      homeDefaultNetworkType: NetworkType.values.firstWhere(
+        (e) => e.name == homeTypeStr,
         orElse: () => NetworkType.mobile,
       ),
     );
@@ -181,10 +188,15 @@ class PreferencesRepository {
     _emitUpdate(_currentPreferences.copyWith(aodModeEnabled: enable));
   }
 
-  /// Sets the default network type shown on the overview dashboard.
+  /// Sets the default network type shown on the home dashboard.
+  Future<void> setHomeDefaultNetworkType(NetworkType type) async {
+    await _prefs.setString(AppConstants.prefHomeDefaultType, type.name);
+    _emitUpdate(_currentPreferences.copyWith(homeDefaultNetworkType: type));
+  }
+
+  /// Backward-compatible alias for [setHomeDefaultNetworkType].
   Future<void> setOverviewDefaultNetworkType(NetworkType type) async {
-    await _prefs.setString(AppConstants.prefOverviewDefaultType, type.name);
-    _emitUpdate(_currentPreferences.copyWith(overviewDefaultNetworkType: type));
+    await setHomeDefaultNetworkType(type);
   }
 
   /// Resets all user preferences to factory defaults.
@@ -197,6 +209,7 @@ class PreferencesRepository {
     await _prefs.remove(AppConstants.prefNotificationIconStyle);
     await _prefs.remove(AppConstants.prefSilentSpeedThresholdKb);
     await _prefs.remove(AppConstants.prefAodModeEnabled);
+    await _prefs.remove(AppConstants.prefHomeDefaultType);
     await _prefs.remove(AppConstants.prefOverviewDefaultType);
     _emitUpdate(const UserPreferences());
   }

@@ -284,7 +284,7 @@ void main() {
     expect(find.byType(HistoryFilterBottomSheet), findsNothing);
   });
 
-  testWidgets('AppScaffold navigates between Overview and History tabs',
+  testWidgets('AppScaffold navigates between Home and History tabs',
       (WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));

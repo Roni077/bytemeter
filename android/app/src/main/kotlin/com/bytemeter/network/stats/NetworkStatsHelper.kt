@@ -1,4 +1,4 @@
-package com.bytemeter.network.bytemeter.stats
+package com.bytemeter.network.stats
 
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager

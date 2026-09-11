@@ -8,16 +8,16 @@ import '../../data/repositories/network_usage_repository.dart';
 import '../../data/repositories/preferences_repository.dart';
 import '../charts/app_usage_bar_chart.dart';
 import '../charts/weekly_bar_chart.dart';
-import 'overview_state.dart';
+import 'home_state.dart';
 
-/// StateNotifier ViewModel orchestrating the Overview Dashboard metrics,
+/// StateNotifier ViewModel orchestrating the Home Dashboard metrics,
 /// predictive mathematical models, live speed updates, and weekly analytics.
-class OverviewController extends StateNotifier<OverviewState> {
-  OverviewController({
+class HomeController extends StateNotifier<HomeState> {
+  HomeController({
     required this.usageRepo,
     required this.prefsRepo,
-  }) : super(OverviewState(
-          selectedNetworkType: prefsRepo.current.overviewDefaultNetworkType,
+  }) : super(HomeState(
+          selectedNetworkType: prefsRepo.current.homeDefaultNetworkType,
         )) {
     loadDashboardData();
   }
@@ -72,7 +72,7 @@ class OverviewController extends StateNotifier<OverviewState> {
         predictedBytes: predictedBytes,
         trendPercentage: trendPercentage,
         weekData: weekData,
-        selectedDayIndex: currentWeekdayIndex,
+        selectedDayIndex: state.selectedDayIndex ?? currentWeekdayIndex,
         topApps: topApps,
         hasUsagePermission: hasPerm,
         isLoading: false,
@@ -90,7 +90,7 @@ class OverviewController extends StateNotifier<OverviewState> {
     if (state.selectedNetworkType == networkType) return;
 
     state = state.copyWith(selectedNetworkType: networkType);
-    await prefsRepo.setOverviewDefaultNetworkType(networkType);
+    await prefsRepo.setHomeDefaultNetworkType(networkType);
     await loadDashboardData();
   }
 
@@ -286,10 +286,14 @@ class OverviewController extends StateNotifier<OverviewState> {
   }
 }
 
-/// Riverpod StateNotifierProvider for [OverviewController].
-final overviewControllerProvider =
-    StateNotifierProvider.autoDispose<OverviewController, OverviewState>((ref) {
+/// Riverpod StateNotifierProvider for [HomeController].
+final homeControllerProvider =
+    StateNotifierProvider.autoDispose<HomeController, HomeState>((ref) {
   final usageRepo = ref.watch(networkUsageRepositoryProvider);
   final prefsRepo = ref.watch(preferencesRepositoryProvider);
-  return OverviewController(usageRepo: usageRepo, prefsRepo: prefsRepo);
+  return HomeController(usageRepo: usageRepo, prefsRepo: prefsRepo);
 });
+
+/// Backward compatibility alias
+typedef OverviewController = HomeController;
+final overviewControllerProvider = homeControllerProvider;

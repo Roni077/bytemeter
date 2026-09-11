@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'core/utils/haptics.dart';
 import 'features/data_plans/data_plans_screen.dart';
 import 'features/history/history_screen.dart';
+import 'features/home/home_screen.dart';
 import 'features/navigation/widgets/modern_bottom_nav_bar.dart';
-import 'features/overview/overview_screen.dart';
 import 'features/settings/settings_screen.dart';
 
 /// Root navigation container providing seamless floating bottom navigation between
-/// Overview, History, Data Plans, and Settings screens with frosted glass aesthetics,
+/// Home, History, Data Plans, and Settings screens with frosted glass aesthetics,
 /// fluid tab indicators, and active-tab scroll-to-top support.
 class AppScaffold extends StatefulWidget {
   const AppScaffold({
@@ -23,7 +23,7 @@ class AppScaffold extends StatefulWidget {
 
 class _AppScaffoldState extends State<AppScaffold> {
   late int _currentIndex;
-  late final ScrollController _overviewScrollController;
+  late final ScrollController _homeScrollController;
   late final ScrollController _historyScrollController;
   late final ScrollController _plansScrollController;
   late final ScrollController _settingsScrollController;
@@ -32,7 +32,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _overviewScrollController = ScrollController();
+    _homeScrollController = ScrollController();
     _historyScrollController = ScrollController();
     _plansScrollController = ScrollController();
     _settingsScrollController = ScrollController();
@@ -40,7 +40,7 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   @override
   void dispose() {
-    _overviewScrollController.dispose();
+    _homeScrollController.dispose();
     _historyScrollController.dispose();
     _plansScrollController.dispose();
     _settingsScrollController.dispose();
@@ -50,7 +50,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   ScrollController _getScrollController(int index) {
     switch (index) {
       case 0:
-        return _overviewScrollController;
+        return _homeScrollController;
       case 1:
         return _historyScrollController;
       case 2:
@@ -58,7 +58,7 @@ class _AppScaffoldState extends State<AppScaffold> {
       case 3:
         return _settingsScrollController;
       default:
-        return _overviewScrollController;
+        return _homeScrollController;
     }
   }
 
@@ -88,9 +88,8 @@ class _AppScaffoldState extends State<AppScaffold> {
   @override
   Widget build(BuildContext context) {
     final screens = <Widget>[
-      OverviewScreen(
-        onOpenSettings: () => _onTabSelected(3),
-        scrollController: _overviewScrollController,
+      HomeScreen(
+        scrollController: _homeScrollController,
       ),
       HistoryScreen(
         scrollController: _historyScrollController,

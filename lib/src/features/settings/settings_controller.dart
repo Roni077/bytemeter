@@ -121,10 +121,15 @@ class SettingsController extends StateNotifier<SettingsState> {
     state = state.copyWith(preferences: prefsRepo.current);
   }
 
-  /// Sets default network type shown on Overview dashboard.
-  Future<void> setOverviewDefaultNetworkType(NetworkType type) async {
-    await prefsRepo.setOverviewDefaultNetworkType(type);
+  /// Sets default network type shown on Home dashboard.
+  Future<void> setHomeDefaultNetworkType(NetworkType type) async {
+    await prefsRepo.setHomeDefaultNetworkType(type);
     state = state.copyWith(preferences: prefsRepo.current);
+  }
+
+  /// Backward-compatible alias for [setHomeDefaultNetworkType].
+  Future<void> setOverviewDefaultNetworkType(NetworkType type) async {
+    await setHomeDefaultNetworkType(type);
   }
 
   /// Requests Android Usage Access permission.

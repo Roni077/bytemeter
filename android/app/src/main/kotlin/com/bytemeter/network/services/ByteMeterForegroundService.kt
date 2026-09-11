@@ -1,4 +1,4 @@
-package com.bytemeter.network.bytemeter.services
+package com.bytemeter.network.services
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -15,9 +15,9 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.bytemeter.network.bytemeter.MainActivity
-import com.bytemeter.network.bytemeter.R
-import com.bytemeter.network.bytemeter.bridge.ByteMeterPlatformBridge
+import com.bytemeter.network.MainActivity
+import com.bytemeter.network.R
+import com.bytemeter.network.bridge.ByteMeterPlatformBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
