@@ -14,7 +14,13 @@ import 'widgets/hour_list_view.dart';
 /// 90-Day Historical Network Analytics Screen with interactive fling timeline,
 /// dual-query comparison engine, ranked application breakdown, and 2-hour interval time buckets.
 class HistoryScreen extends ConsumerWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({
+    super.key,
+    this.scrollController,
+  });
+
+  /// Optional scroll controller to coordinate scroll-to-top actions.
+  final ScrollController? scrollController;
 
   void _openFilterBottomSheet(BuildContext context, WidgetRef ref) {
     final state = ref.read(historyControllerProvider);
@@ -114,12 +120,13 @@ class HistoryScreen extends ConsumerWidget {
           await controller.loadInitialData(refresh: true);
         },
         child: ListView(
+          controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
           padding: EdgeInsets.only(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-            bottom: MediaQuery.of(context).padding.bottom + 24,
+            bottom: MediaQuery.of(context).padding.bottom + 96,
           ),
           children: [
             // 1. 90-Day Fling-Scrollable Timeline Bar Chart

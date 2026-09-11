@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'core/utils/haptics.dart';
 import 'features/data_plans/data_plans_screen.dart';
 import 'features/history/history_screen.dart';
+import 'features/navigation/widgets/modern_bottom_nav_bar.dart';
 import 'features/overview/overview_screen.dart';
 import 'features/settings/settings_screen.dart';
 
-/// Root navigation container providing seamless bottom navigation between
-/// Overview, History, Data Plans, and Settings screens.
+/// Root navigation container providing seamless floating bottom navigation between
+/// Overview, History, Data Plans, and Settings screens with frosted glass aesthetics,
+/// fluid tab indicators, and active-tab scroll-to-top support.
 class AppScaffold extends StatefulWidget {
   const AppScaffold({
     super.key,
@@ -21,19 +23,66 @@ class AppScaffold extends StatefulWidget {
 
 class _AppScaffoldState extends State<AppScaffold> {
   late int _currentIndex;
+  late final ScrollController _overviewScrollController;
+  late final ScrollController _historyScrollController;
+  late final ScrollController _plansScrollController;
+  late final ScrollController _settingsScrollController;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _overviewScrollController = ScrollController();
+    _historyScrollController = ScrollController();
+    _plansScrollController = ScrollController();
+    _settingsScrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _overviewScrollController.dispose();
+    _historyScrollController.dispose();
+    _plansScrollController.dispose();
+    _settingsScrollController.dispose();
+    super.dispose();
+  }
+
+  ScrollController _getScrollController(int index) {
+    switch (index) {
+      case 0:
+        return _overviewScrollController;
+      case 1:
+        return _historyScrollController;
+      case 2:
+        return _plansScrollController;
+      case 3:
+        return _settingsScrollController;
+      default:
+        return _overviewScrollController;
+    }
   }
 
   void _onTabSelected(int index) {
-    if (_currentIndex == index) return;
+    if (_currentIndex == index) {
+      _onTabReselected(index);
+      return;
+    }
     AppHaptics.selectionTick();
     setState(() {
       _currentIndex = index;
     });
+  }
+
+  void _onTabReselected(int index) {
+    AppHaptics.selectionTick();
+    final controller = _getScrollController(index);
+    if (controller.hasClients) {
+      controller.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   @override
@@ -41,42 +90,29 @@ class _AppScaffoldState extends State<AppScaffold> {
     final screens = <Widget>[
       OverviewScreen(
         onOpenSettings: () => _onTabSelected(3),
+        scrollController: _overviewScrollController,
       ),
-      const HistoryScreen(),
-      const DataPlansScreen(),
-      const SettingsScreen(),
+      HistoryScreen(
+        scrollController: _historyScrollController,
+      ),
+      DataPlansScreen(
+        scrollController: _plansScrollController,
+      ),
+      SettingsScreen(
+        scrollController: _settingsScrollController,
+      ),
     ];
 
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: ModernBottomNavBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _onTabSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.bolt_outlined),
-            selectedIcon: Icon(Icons.bolt_rounded),
-            label: 'Overview',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart_rounded),
-            label: 'History',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.credit_card_outlined),
-            selectedIcon: Icon(Icons.credit_card_rounded),
-            label: 'Plans',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Settings',
-          ),
-        ],
+        onDestinationReselected: _onTabReselected,
       ),
     );
   }

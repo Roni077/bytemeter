@@ -18,7 +18,13 @@ import 'widgets/settings_tile.dart';
 /// sub-screens: Theme & Appearance, Status Bar Speed Meter, Units & Calculation Standards,
 /// Permissions & Diagnostics, Storage & Privacy, and About & System Information.
 class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({
+    super.key,
+    this.scrollController,
+  });
+
+  /// Optional scroll controller to coordinate scroll-to-top actions.
+  final ScrollController? scrollController;
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -187,6 +193,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ),
       ),
       body: ListView(
+        controller: widget.scrollController,
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
@@ -194,7 +201,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           left: 16,
           right: 16,
           top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-          bottom: MediaQuery.of(context).padding.bottom + 24,
+          bottom: MediaQuery.of(context).padding.bottom + 96,
         ),
         children: [
           // 1. Instant Settings Search / Filter Bar

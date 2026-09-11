@@ -13,7 +13,13 @@ import 'widgets/sim_card_pager.dart';
 /// Main screen displaying the Multi-SIM Carousel, dynamic daily allowance budgets,
 /// Data Safety health indicators, and active booster addon packs.
 class DataPlansScreen extends ConsumerWidget {
-  const DataPlansScreen({super.key});
+  const DataPlansScreen({
+    super.key,
+    this.scrollController,
+  });
+
+  /// Optional scroll controller to coordinate scroll-to-top actions.
+  final ScrollController? scrollController;
 
   void _openPlanConfig(BuildContext context, WidgetRef ref, {DataPlan? plan, int slotIndex = 0}) {
     AppHaptics.contextClick();
@@ -76,7 +82,11 @@ class DataPlansScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: controller.refresh,
         child: ListView(
-          padding: const EdgeInsets.only(top: 8, bottom: 32),
+          controller: scrollController,
+          padding: EdgeInsets.only(
+            top: 8,
+            bottom: MediaQuery.of(context).padding.bottom + 96,
+          ),
           children: [
             // Error Banner (if any)
             if (state.errorMessage != null) ...[

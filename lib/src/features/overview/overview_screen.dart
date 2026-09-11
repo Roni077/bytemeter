@@ -19,10 +19,14 @@ class OverviewScreen extends ConsumerStatefulWidget {
   const OverviewScreen({
     super.key,
     this.onOpenSettings,
+    this.scrollController,
   });
 
   /// Optional callback to navigate to the settings screen.
   final VoidCallback? onOpenSettings;
+
+  /// Optional scroll controller to coordinate scroll-to-top actions.
+  final ScrollController? scrollController;
 
   @override
   ConsumerState<OverviewScreen> createState() => _OverviewScreenState();
@@ -145,6 +149,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
           await controller.loadDashboardData(refresh: true);
         },
         child: ListView(
+          controller: widget.scrollController,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -152,7 +157,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen>
             left: 16,
             right: 16,
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-            bottom: MediaQuery.of(context).padding.bottom + 24,
+            bottom: MediaQuery.of(context).padding.bottom + 96,
           ),
           children: [
             // Permission Alert Banner (if usage access missing)
