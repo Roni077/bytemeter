@@ -6,6 +6,10 @@
 -keep class io.flutter.**  { *; }
 -keep class io.flutter.plugins.**  { *; }
 
+# Flutter Play Store Deferred Components (Play Core is not bundled)
+-dontwarn com.google.android.play.core.**
+-dontwarn io.flutter.embedding.**
+
 # ByteMeter Native Models and Services
 -keep class com.bytemeter.network.services.** { *; }
 -keep class com.bytemeter.network.stats.** { *; }
