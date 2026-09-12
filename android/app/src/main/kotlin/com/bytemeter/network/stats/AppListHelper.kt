@@ -18,7 +18,8 @@ import java.io.ByteArrayOutputStream
 
 class AppListHelper(private val context: Context) {
     private val packageManager: PackageManager = context.packageManager
-    private val iconCache = android.util.LruCache<String, ByteArray>(64)
+    private val iconCache = android.util.LruCache<String, ByteArray>(128)
+    private val failedPackages = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
 
     suspend fun getInstalledApps(): List<Map<String, Any?>> = withContext(Dispatchers.IO) {
         val installedApps = try {
@@ -64,6 +65,9 @@ class AppListHelper(private val context: Context) {
         if (packageName.isEmpty() || packageName.startsWith("system.") || packageName.startsWith("uid_")) {
             return@withContext null
         }
+        if (failedPackages.contains(packageName)) {
+            return@withContext null
+        }
         iconCache.get(packageName)?.let { return@withContext it }
 
         try {
@@ -77,9 +81,12 @@ class AppListHelper(private val context: Context) {
             val bytes = drawableToPngByteArray(drawable)
             if (bytes != null) {
                 iconCache.put(packageName, bytes)
+            } else {
+                failedPackages.add(packageName)
             }
             bytes
         } catch (e: Exception) {
+            failedPackages.add(packageName)
             null
         }
     }
@@ -102,25 +109,30 @@ class AppListHelper(private val context: Context) {
 
     private fun drawableToPngByteArray(drawable: Drawable): ByteArray? {
         return try {
-            val bitmap = when (drawable) {
-                is BitmapDrawable -> drawable.bitmap
+            val targetSize = 96
+            val (bitmap, shouldRecycle) = when (drawable) {
+                is BitmapDrawable -> {
+                    val orig = drawable.bitmap
+                    if (orig.width > targetSize || orig.height > targetSize) {
+                        Pair(Bitmap.createScaledBitmap(orig, targetSize, targetSize, true), true)
+                    } else {
+                        Pair(orig, false)
+                    }
+                }
                 else -> {
-                    val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 96
-                    val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 96
-                    val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    val bmp = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
                     val canvas = Canvas(bmp)
-                    drawable.setBounds(0, 0, canvas.width, canvas.height)
+                    drawable.setBounds(0, 0, targetSize, targetSize)
                     drawable.draw(canvas)
-                    bmp
+                    Pair(bmp, true)
                 }
             }
-            val scaledBitmap = if (bitmap.width > 96 || bitmap.height > 96) {
-                Bitmap.createScaledBitmap(bitmap, 96, 96, true)
-            } else {
-                bitmap
-            }
+
             val stream = ByteArrayOutputStream()
-            scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            if (shouldRecycle && !bitmap.isRecycled) {
+                bitmap.recycle()
+            }
             stream.toByteArray()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to convert drawable to PNG", e)

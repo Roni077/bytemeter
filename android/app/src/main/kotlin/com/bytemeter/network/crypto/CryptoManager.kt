@@ -20,12 +20,14 @@ object CryptoManager {
     private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
     private val keyCache = ConcurrentHashMap<String, SecretKey>()
 
+    @Synchronized
     private fun getSecretKey(alias: String): SecretKey {
         return keyCache[alias] ?: (keyStore.getEntry(alias, null) as? KeyStore.SecretKeyEntry)?.secretKey?.also {
             keyCache[alias] = it
         } ?: createKey(alias)
     }
 
+    @Synchronized
     private fun createKey(alias: String): SecretKey {
         val isHmac = alias == HMAC_ALIAS
         val algorithm = if (isHmac) KeyProperties.KEY_ALGORITHM_HMAC_SHA256 else KeyProperties.KEY_ALGORITHM_AES

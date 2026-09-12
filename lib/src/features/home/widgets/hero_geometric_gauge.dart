@@ -147,42 +147,41 @@ class _HeroGeometricGaugeState extends State<HeroGeometricGauge>
                   alignment: Alignment.center,
                   children: [
                     // Layer 1: Pulsating Radial Glow Background
-                    AnimatedBuilder(
-                      animation: _pulseAnimation,
-                      builder: (context, child) {
-                        return Container(
-                          width: widget.size,
-                          height: widget.size,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                containerColor.withValues(alpha: 0.35 + 0.15 * _pulseAnimation.value),
-                                accentColor.withValues(alpha: 0.08 + 0.07 * _pulseAnimation.value),
-                                Colors.transparent,
-                              ],
-                              stops: const [0.3, 0.7, 1.0],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    // Layer 2: Rotating 12-Sided Cookie Polygon
                     RepaintBoundary(
                       child: AnimatedBuilder(
-                        animation: _rotationController,
+                        animation: _pulseAnimation,
                         builder: (context, child) {
-                          return CustomPaint(
-                            size: Size(widget.size, widget.size),
-                            painter: HeroGaugePainter(
-                              rotationAngle: _rotationController.value * 2 * math.pi,
-                              accentColor: accentColor,
-                              containerColor: containerColor,
-                              surfaceColor: colorScheme.surface,
+                          return Container(
+                            width: widget.size,
+                            height: widget.size,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  containerColor.withValues(alpha: 0.35 + 0.15 * _pulseAnimation.value),
+                                  accentColor.withValues(alpha: 0.08 + 0.07 * _pulseAnimation.value),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.3, 0.7, 1.0],
+                              ),
                             ),
                           );
                         },
+                      ),
+                    ),
+
+                    // Layer 2: Rotating 12-Sided Cookie Polygon (GPU Matrix Accelerated)
+                    RotationTransition(
+                      turns: _rotationController,
+                      child: RepaintBoundary(
+                        child: CustomPaint(
+                          size: Size(widget.size, widget.size),
+                          painter: HeroGaugePainter(
+                            accentColor: accentColor,
+                            containerColor: containerColor,
+                            surfaceColor: colorScheme.surface,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -282,7 +281,7 @@ class _HeroGeometricGaugeState extends State<HeroGeometricGauge>
 /// Custom canvas painter generating the rotating 12-sided cookie polygon.
 class HeroGaugePainter extends CustomPainter {
   const HeroGaugePainter({
-    required this.rotationAngle,
+    this.rotationAngle = 0.0,
     required this.accentColor,
     required this.containerColor,
     required this.surfaceColor,
@@ -347,7 +346,9 @@ class HeroGaugePainter extends CustomPainter {
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotationAngle);
+    if (rotationAngle != 0.0) {
+      canvas.rotate(rotationAngle);
+    }
 
     final path = _getCookiePath(size.width);
 

@@ -120,6 +120,8 @@ class _AppSearchModalState extends State<AppSearchModal> {
           app.iconBytes!,
           width: 40,
           height: 40,
+          cacheWidth: 120,
+          cacheHeight: 120,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(app, colorScheme),
         ),
@@ -164,7 +166,7 @@ class _AppSearchModalState extends State<AppSearchModal> {
       color: colorScheme.surface,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.85,
+        height: MediaQuery.sizeOf(context).height * 0.85,
         child: Column(
         children: [
           // Drag Handle

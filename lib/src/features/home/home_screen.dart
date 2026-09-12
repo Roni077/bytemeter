@@ -63,45 +63,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       extendBodyBehindAppBar: prefs.enableBlur,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: prefs.enableBlur
-                ? ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0)
-                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-            child: AppBar(
-              backgroundColor: prefs.enableBlur
-                  ? colorScheme.surface.withValues(alpha: 0.75)
-                  : colorScheme.surface,
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.bolt_rounded,
-                      color: colorScheme.onPrimaryContainer,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'ByteMeter',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              actions: const [
-                SizedBox(width: 8),
-              ],
-            ),
-          ),
-        ),
+        child: prefs.enableBlur
+            ? ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+                  child: _buildAppBar(context, colorScheme, theme, true),
+                ),
+              )
+            : _buildAppBar(context, colorScheme, theme, false),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -116,8 +85,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           padding: EdgeInsets.only(
             left: 16,
             right: 16,
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-            bottom: MediaQuery.of(context).padding.bottom + 96,
+            top: MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
+            bottom: MediaQuery.paddingOf(context).bottom + 96,
           ),
           children: [
             // Permission Alert Banner (if usage access missing)
@@ -198,6 +167,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
       ),
+    );
+  }
+
+  AppBar _buildAppBar(BuildContext context, ColorScheme colorScheme, ThemeData theme, bool hasBlur) {
+    return AppBar(
+      backgroundColor: hasBlur
+          ? colorScheme.surface.withValues(alpha: 0.75)
+          : colorScheme.surface,
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.bolt_rounded,
+              color: colorScheme.onPrimaryContainer,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'ByteMeter',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+      actions: const [
+        SizedBox(width: 8),
+      ],
     );
   }
 }

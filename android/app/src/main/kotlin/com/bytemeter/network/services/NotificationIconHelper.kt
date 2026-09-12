@@ -52,41 +52,68 @@ class NotificationIconHelper(private val context: Context) {
     }
 
     private val height = (96 * multiplier).toInt().coerceAtLeast(1)
-    private var bitmap: Bitmap = createBitmap(height, height, Bitmap.Config.ARGB_8888)
+
+    // Double-buffered ping-pong bitmaps & canvases to eliminate 1-Hz allocations
+    private val bitmapA: Bitmap = createBitmap(height, height, Bitmap.Config.ARGB_8888)
+    private val bitmapB: Bitmap = createBitmap(height, height, Bitmap.Config.ARGB_8888)
+    private val canvasA: Canvas = Canvas(bitmapA)
+    private val canvasB: Canvas = Canvas(bitmapB)
+    private var useBufferA: Boolean = true
+
+    private var lastSpeed: String? = null
+    private var lastUnit: String? = null
+    private var cachedIcon: IconCompat? = null
+
+    private var lastSpeed1: String? = null
+    private var lastSpeed2: String? = null
+    private var cachedSeparateIcon: IconCompat? = null
+
     private val bitmapMutex = Mutex()
 
     suspend fun createIcon(speed: String, unit: String): IconCompat {
         bitmapMutex.withLock {
-            if (bitmap.height != height || bitmap.width != height) {
-                bitmap = createBitmap(height, height, Bitmap.Config.ARGB_8888)
-            } else {
-                bitmap.eraseColor(Color.TRANSPARENT)
+            if (speed == lastSpeed && unit == lastUnit && cachedIcon != null) {
+                return cachedIcon!!
             }
 
-            val canvas = Canvas(bitmap)
-            canvas.drawText(speed, 48f * multiplier, 54f * multiplier, paintValue)
-            canvas.drawText(unit, 48f * multiplier, 94f * multiplier, paintUnit)
+            val targetBitmap = if (useBufferA) bitmapA else bitmapB
+            val targetCanvas = if (useBufferA) canvasA else canvasB
+            useBufferA = !useBufferA
 
-            return IconCompat.createWithBitmap(bitmap.copy(Bitmap.Config.ARGB_8888, false))
+            targetBitmap.eraseColor(Color.TRANSPARENT)
+            targetCanvas.drawText(speed, 48f * multiplier, 54f * multiplier, paintValue)
+            targetCanvas.drawText(unit, 48f * multiplier, 94f * multiplier, paintUnit)
+
+            val icon = IconCompat.createWithBitmap(targetBitmap)
+            lastSpeed = speed
+            lastUnit = unit
+            cachedIcon = icon
+            return icon
         }
     }
 
     suspend fun createIconSeparate(speed1: String, speed2: String): IconCompat {
         bitmapMutex.withLock {
-            if (bitmap.height != height || bitmap.width != height) {
-                bitmap = createBitmap(height, height, Bitmap.Config.ARGB_8888)
-            } else {
-                bitmap.eraseColor(Color.TRANSPARENT)
+            if (speed1 == lastSpeed1 && speed2 == lastSpeed2 && cachedSeparateIcon != null) {
+                return cachedSeparateIcon!!
             }
 
-            val canvas = Canvas(bitmap)
+            val targetBitmap = if (useBufferA) bitmapA else bitmapB
+            val targetCanvas = if (useBufferA) canvasA else canvasB
+            useBufferA = !useBufferA
+
+            targetBitmap.eraseColor(Color.TRANSPARENT)
             val str1 = if (speed1.length >= 5) speed1.replace(" ", "") else speed1
             val str2 = if (speed2.length >= 5) speed2.replace(" ", "") else speed2
 
-            canvas.drawText(str1, 96f * multiplier, 48f * multiplier, paintSeparate)
-            canvas.drawText(str2, 96f * multiplier, 96f * multiplier, paintSeparate)
+            targetCanvas.drawText(str1, 96f * multiplier, 48f * multiplier, paintSeparate)
+            targetCanvas.drawText(str2, 96f * multiplier, 96f * multiplier, paintSeparate)
 
-            return IconCompat.createWithBitmap(bitmap.copy(Bitmap.Config.ARGB_8888, false))
+            val icon = IconCompat.createWithBitmap(targetBitmap)
+            lastSpeed1 = speed1
+            lastSpeed2 = speed2
+            cachedSeparateIcon = icon
+            return icon
         }
     }
 }

@@ -21,32 +21,14 @@ class DataPrivacySettingsScreen extends ConsumerWidget {
       extendBodyBehindAppBar: prefs.enableBlur,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: prefs.enableBlur
-                ? ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0)
-                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-            child: AppBar(
-              backgroundColor: prefs.enableBlur
-                  ? colorScheme.surface.withValues(alpha: 0.75)
-                  : colorScheme.surface,
-              title: Text(
-                'Storage & Privacy',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+        child: prefs.enableBlur
+            ? ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+                  child: _buildAppBar(context, theme, colorScheme, true),
                 ),
-              ),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () {
-                  AppHaptics.contextClick();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-          ),
-        ),
+              )
+            : _buildAppBar(context, theme, colorScheme, false),
       ),
       body: ListView(
         physics: const AlwaysScrollableScrollPhysics(
@@ -55,8 +37,8 @@ class DataPrivacySettingsScreen extends ConsumerWidget {
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
-          top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-          bottom: MediaQuery.of(context).padding.bottom + 24,
+          top: MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
+          bottom: MediaQuery.paddingOf(context).bottom + 24,
         ),
         children: [
           // 1. Offline Guarantee Hero Banner
@@ -305,4 +287,32 @@ class DataPrivacySettingsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  AppBar _buildAppBar(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool hasBlur,
+  ) {
+    return AppBar(
+      backgroundColor: hasBlur
+          ? colorScheme.surface.withValues(alpha: 0.75)
+          : colorScheme.surface,
+      title: Text(
+        'Storage & Privacy',
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () {
+          AppHaptics.contextClick();
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
 }
+

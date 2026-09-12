@@ -419,87 +419,89 @@ class _WeeklyBarChartPainter extends CustomPainter {
       ..color = AppColorSchemes.wifiColor.withValues(alpha: 0.4)
       ..style = PaintingStyle.fill;
 
-    for (int i = 0; i < count; i++) {
-      final isSelected = i == selectedIndex;
-      final centerX = (i * partitionWidth) + (partitionWidth / 2);
+    final haloPaint = Paint()
+      ..color = colorScheme.primary.withValues(alpha: 0.08)
+      ..style = PaintingStyle.fill;
 
-      final barWidth = isSelected
-          ? barMaxWidth * squeezeWidthFactor
-          : barMaxWidth;
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    try {
+      for (int i = 0; i < count; i++) {
+        final isSelected = i == selectedIndex;
+        final centerX = (i * partitionWidth) + (partitionWidth / 2);
 
-      final dayData = i < weekData.length ? weekData[i] : null;
-      final cellBytes = (dayData != null && showCellular) ? dayData.cellularBytes : 0;
-      final wifiBytes = (dayData != null && showWifi) ? dayData.wifiBytes : 0;
-      final totalBytes = cellBytes + wifiBytes;
+        final barWidth = isSelected
+            ? barMaxWidth * squeezeWidthFactor
+            : barMaxWidth;
 
-      final double totalBarHeight = (totalBytes > 0)
-          ? ((totalBytes / maxBytes) * (chartHeight - 8.0)).clamp(4.0, chartHeight - 8.0) *
-              (isSelected ? bounceHeightFactor : 1.0)
-          : 3.0; // Minimal pill for zero usage
+        final dayData = i < weekData.length ? weekData[i] : null;
+        final cellBytes = (dayData != null && showCellular) ? dayData.cellularBytes : 0;
+        final wifiBytes = (dayData != null && showWifi) ? dayData.wifiBytes : 0;
+        final totalBytes = cellBytes + wifiBytes;
 
-      final double cellRatio = totalBytes > 0 ? (cellBytes / totalBytes) : 0.0;
-      final double cellHeight = totalBarHeight * cellRatio;
-      final double wifiHeight = totalBarHeight - cellHeight;
+        final double totalBarHeight = (totalBytes > 0)
+            ? ((totalBytes / maxBytes) * (chartHeight - 8.0)).clamp(4.0, chartHeight - 8.0) *
+                (isSelected ? bounceHeightFactor : 1.0)
+            : 3.0; // Minimal pill for zero usage
 
-      final double barLeft = centerX - (barWidth / 2);
-      final double barBottom = chartHeight;
+        final double cellRatio = totalBytes > 0 ? (cellBytes / totalBytes) : 0.0;
+        final double cellHeight = totalBarHeight * cellRatio;
+        final double wifiHeight = totalBarHeight - cellHeight;
 
-      // Selection background halo pill
-      if (isSelected) {
-        final selectionHaloRect = RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            (i * partitionWidth) + 2,
-            2,
-            partitionWidth - 4,
-            chartHeight - 2,
-          ),
-          const Radius.circular(12),
-        );
-        final haloPaint = Paint()
-          ..color = colorScheme.primary.withValues(alpha: 0.08)
-          ..style = PaintingStyle.fill;
-        canvas.drawRRect(selectionHaloRect, haloPaint);
-      }
+        final double barLeft = centerX - (barWidth / 2);
+        final double barBottom = chartHeight;
 
-      // Draw Cellular segment (Bottom)
-      if (cellHeight > 0) {
-        final cellRect = RRect.fromRectAndCorners(
-          Rect.fromLTWH(barLeft, barBottom - cellHeight, barWidth, cellHeight),
-          bottomLeft: const Radius.circular(6),
-          bottomRight: const Radius.circular(6),
-          topLeft: wifiHeight == 0 ? const Radius.circular(6) : Radius.zero,
-          topRight: wifiHeight == 0 ? const Radius.circular(6) : Radius.zero,
-        );
-        canvas.drawRRect(
-          cellRect,
-          isSelected ? cellularPaint : cellularInactivePaint,
-        );
-      }
+        // Selection background halo pill
+        if (isSelected) {
+          final selectionHaloRect = RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              (i * partitionWidth) + 2,
+              2,
+              partitionWidth - 4,
+              chartHeight - 2,
+            ),
+            const Radius.circular(12),
+          );
+          canvas.drawRRect(selectionHaloRect, haloPaint);
+        }
 
-      // Draw Wi-Fi segment (Top, stacked on top of cellular)
-      if (wifiHeight > 0) {
-        final wifiRect = RRect.fromRectAndCorners(
-          Rect.fromLTWH(
-            barLeft,
-            barBottom - totalBarHeight,
-            barWidth,
-            wifiHeight,
-          ),
-          topLeft: const Radius.circular(6),
-          topRight: const Radius.circular(6),
-          bottomLeft: cellHeight == 0 ? const Radius.circular(6) : Radius.zero,
-          bottomRight: cellHeight == 0 ? const Radius.circular(6) : Radius.zero,
-        );
-        canvas.drawRRect(
-          wifiRect,
-          isSelected ? wifiPaint : wifiInactivePaint,
-        );
-      }
+        // Draw Cellular segment (Bottom)
+        if (cellHeight > 0) {
+          final cellRect = RRect.fromRectAndCorners(
+            Rect.fromLTWH(barLeft, barBottom - cellHeight, barWidth, cellHeight),
+            bottomLeft: const Radius.circular(6),
+            bottomRight: const Radius.circular(6),
+            topLeft: wifiHeight == 0 ? const Radius.circular(6) : Radius.zero,
+            topRight: wifiHeight == 0 ? const Radius.circular(6) : Radius.zero,
+          );
+          canvas.drawRRect(
+            cellRect,
+            isSelected ? cellularPaint : cellularInactivePaint,
+          );
+        }
 
-      // 3. Draw Day of Week Label below baseline
-      final dayLabel = i < dayNames.length ? dayNames[i] : 'D$i';
-      final textPainter = TextPainter(
-        text: TextSpan(
+        // Draw Wi-Fi segment (Top, stacked on top of cellular)
+        if (wifiHeight > 0) {
+          final wifiRect = RRect.fromRectAndCorners(
+            Rect.fromLTWH(
+              barLeft,
+              barBottom - totalBarHeight,
+              barWidth,
+              wifiHeight,
+            ),
+            topLeft: const Radius.circular(6),
+            topRight: const Radius.circular(6),
+            bottomLeft: cellHeight == 0 ? const Radius.circular(6) : Radius.zero,
+            bottomRight: cellHeight == 0 ? const Radius.circular(6) : Radius.zero,
+          );
+          canvas.drawRRect(
+            wifiRect,
+            isSelected ? wifiPaint : wifiInactivePaint,
+          );
+        }
+
+        // 3. Draw Day of Week Label below baseline
+        final dayLabel = i < dayNames.length ? dayNames[i] : 'D$i';
+        textPainter.text = TextSpan(
           text: dayLabel,
           style: TextStyle(
             fontSize: 11,
@@ -508,14 +510,15 @@ class _WeeklyBarChartPainter extends CustomPainter {
                 ? colorScheme.primary
                 : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
           ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      textPainter.paint(
-        canvas,
-        Offset(centerX - (textPainter.width / 2), chartHeight + 6),
-      );
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(centerX - (textPainter.width / 2), chartHeight + 6),
+        );
+      }
+    } finally {
+      textPainter.dispose();
     }
   }
 

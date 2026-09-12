@@ -105,7 +105,7 @@ class _HistoryFilterBottomSheetState extends State<HistoryFilterBottomSheet> {
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.9,
         ),
         child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -252,7 +252,7 @@ class _HistoryFilterBottomSheetState extends State<HistoryFilterBottomSheet> {
               left: 20,
               right: 20,
               top: 12,
-              bottom: MediaQuery.of(context).padding.bottom + 16,
+              bottom: MediaQuery.paddingOf(context).bottom + 16,
             ),
             child: FilledButton(
               onPressed: () {

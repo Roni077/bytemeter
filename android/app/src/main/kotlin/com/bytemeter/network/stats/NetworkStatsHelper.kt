@@ -9,10 +9,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 class NetworkStatsHelper(private val context: Context) {
     private val networkStatsManager = context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
+    private val binderSemaphore = Semaphore(4)
 
     suspend fun queryDeviceSummary(
         networkType: Int,
@@ -133,25 +136,27 @@ class NetworkStatsHelper(private val context: Context) {
                 val deferredList = slots.map { slotStart ->
                     val slotEnd = (slotStart + twoHoursMs).coerceAtMost(endTime)
                     async {
-                        try {
-                            val bucket = networkStatsManager.querySummaryForDevice(netType, subscriberId, slotStart, slotEnd)
-                            mapOf(
-                                "uid" to UID_ALL,
-                                "upload" to bucket.txBytes.coerceAtLeast(0L),
-                                "download" to bucket.rxBytes.coerceAtLeast(0L),
-                                "total" to (bucket.txBytes + bucket.rxBytes).coerceAtLeast(0L),
-                                "startTime" to slotStart,
-                                "endTime" to slotEnd
-                            )
-                        } catch (e: Exception) {
-                            mapOf(
-                                "uid" to UID_ALL,
-                                "upload" to 0L,
-                                "download" to 0L,
-                                "total" to 0L,
-                                "startTime" to slotStart,
-                                "endTime" to slotEnd
-                            )
+                        binderSemaphore.withPermit {
+                            try {
+                                val bucket = networkStatsManager.querySummaryForDevice(netType, subscriberId, slotStart, slotEnd)
+                                mapOf(
+                                    "uid" to UID_ALL,
+                                    "upload" to bucket.txBytes.coerceAtLeast(0L),
+                                    "download" to bucket.rxBytes.coerceAtLeast(0L),
+                                    "total" to (bucket.txBytes + bucket.rxBytes).coerceAtLeast(0L),
+                                    "startTime" to slotStart,
+                                    "endTime" to slotEnd
+                                )
+                            } catch (e: Exception) {
+                                mapOf(
+                                    "uid" to UID_ALL,
+                                    "upload" to 0L,
+                                    "download" to 0L,
+                                    "total" to 0L,
+                                    "startTime" to slotStart,
+                                    "endTime" to slotEnd
+                                )
+                            }
                         }
                     }
                 }
@@ -174,40 +179,42 @@ class NetworkStatsHelper(private val context: Context) {
             days.map { dayStart ->
                 val dayEnd = (dayStart + oneDayMs).coerceAtMost(endTime)
                 async {
-                    val mobile = try {
-                        val b = networkStatsManager.querySummaryForDevice(
-                            ConnectivityManager.TYPE_MOBILE,
-                            subscriberId,
-                            dayStart,
-                            dayEnd
-                        )
-                        Pair(b.txBytes.coerceAtLeast(0L), b.rxBytes.coerceAtLeast(0L))
-                    } catch (e: Exception) {
-                        Pair(0L, 0L)
-                    }
+                    binderSemaphore.withPermit {
+                        val mobile = try {
+                            val b = networkStatsManager.querySummaryForDevice(
+                                ConnectivityManager.TYPE_MOBILE,
+                                subscriberId,
+                                dayStart,
+                                dayEnd
+                            )
+                            Pair(b.txBytes.coerceAtLeast(0L), b.rxBytes.coerceAtLeast(0L))
+                        } catch (e: Exception) {
+                            Pair(0L, 0L)
+                        }
 
-                    val wifi = try {
-                        val b = networkStatsManager.querySummaryForDevice(
-                            ConnectivityManager.TYPE_WIFI,
-                            null,
-                            dayStart,
-                            dayEnd
-                        )
-                        Pair(b.txBytes.coerceAtLeast(0L), b.rxBytes.coerceAtLeast(0L))
-                    } catch (e: Exception) {
-                        Pair(0L, 0L)
-                    }
+                        val wifi = try {
+                            val b = networkStatsManager.querySummaryForDevice(
+                                ConnectivityManager.TYPE_WIFI,
+                                null,
+                                dayStart,
+                                dayEnd
+                            )
+                            Pair(b.txBytes.coerceAtLeast(0L), b.rxBytes.coerceAtLeast(0L))
+                        } catch (e: Exception) {
+                            Pair(0L, 0L)
+                        }
 
-                    mapOf<String, Any>(
-                        "startTime" to dayStart,
-                        "endTime" to dayEnd,
-                        "cellUpload" to mobile.first,
-                        "cellDownload" to mobile.second,
-                        "cellTotal" to (mobile.first + mobile.second),
-                        "wifiUpload" to wifi.first,
-                        "wifiDownload" to wifi.second,
-                        "wifiTotal" to (wifi.first + wifi.second)
-                    )
+                        mapOf<String, Any>(
+                            "startTime" to dayStart,
+                            "endTime" to dayEnd,
+                            "cellUpload" to mobile.first,
+                            "cellDownload" to mobile.second,
+                            "cellTotal" to (mobile.first + mobile.second),
+                            "wifiUpload" to wifi.first,
+                            "wifiDownload" to wifi.second,
+                            "wifiTotal" to (wifi.first + wifi.second)
+                        )
+                    }
                 }
             }.awaitAll()
         }

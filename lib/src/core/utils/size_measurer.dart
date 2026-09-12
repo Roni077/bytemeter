@@ -15,9 +15,13 @@ class SizeMeasurer {
     final textPainter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: textDirection,
-    )..layout();
-
-    return textPainter.size;
+    );
+    try {
+      textPainter.layout();
+      return textPainter.size;
+    } finally {
+      textPainter.dispose();
+    }
   }
 
   /// Calculates the largest legible font size fitting within [maxWidth] using a binary search loop.
@@ -36,21 +40,24 @@ class SizeMeasurer {
     double high = maxFontSize;
     double bestFit = minFontSize;
 
-    for (int i = 0; i < maxIterations; i++) {
-      final mid = (low + high) / 2.0;
-      final painter = TextPainter(
-        text: TextSpan(text: text, style: baseStyle.copyWith(fontSize: mid)),
-        textDirection: textDirection,
-      )..layout();
+    final painter = TextPainter(textDirection: textDirection);
+    try {
+      for (int i = 0; i < maxIterations; i++) {
+        final mid = (low + high) / 2.0;
+        painter.text = TextSpan(text: text, style: baseStyle.copyWith(fontSize: mid));
+        painter.layout();
 
-      if (painter.width <= maxWidth) {
-        bestFit = mid;
-        low = mid;
-      } else {
-        high = mid;
+        if (painter.width <= maxWidth) {
+          bestFit = mid;
+          low = mid;
+        } else {
+          high = mid;
+        }
+
+        if ((high - low).abs() < 0.25) break;
       }
-
-      if ((high - low).abs() < 0.25) break;
+    } finally {
+      painter.dispose();
     }
 
     return bestFit;

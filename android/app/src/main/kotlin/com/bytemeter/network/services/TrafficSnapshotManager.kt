@@ -92,16 +92,25 @@ class TrafficSnapshotManager(
 
     private suspend fun regularUpdateSnapshot(): TrafficSnapshot = withContext(Dispatchers.IO) {
         val inter = interfaces
-        return@withContext if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && inter.isNotEmpty()) {
+        val totalTx = TrafficStats.getTotalTxBytes()
+        val totalRx = TrafficStats.getTotalRxBytes()
+
+        return@withContext if (totalTx != TrafficStats.UNSUPPORTED.toLong() && totalRx != TrafficStats.UNSUPPORTED.toLong()) {
             TrafficSnapshot(
-                up = inter.sumOf { TrafficStats.getTxBytes(it).coerceAtLeast(0L) },
-                down = inter.sumOf { TrafficStats.getRxBytes(it).coerceAtLeast(0L) },
+                up = totalTx.coerceAtLeast(0L),
+                down = totalRx.coerceAtLeast(0L),
                 interfaces = inter
             )
         } else {
+            // Fallback: exclude virtual tunnel interfaces to prevent 2x double counting
+            val physicalInterfaces = inter.filter { !it.startsWith("tun") && !it.startsWith("dummy") }
             TrafficSnapshot(
-                up = TrafficStats.getTotalTxBytes().coerceAtLeast(0L),
-                down = TrafficStats.getTotalRxBytes().coerceAtLeast(0L),
+                up = physicalInterfaces.sumOf {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) TrafficStats.getTxBytes(it).coerceAtLeast(0L) else 0L
+                },
+                down = physicalInterfaces.sumOf {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) TrafficStats.getRxBytes(it).coerceAtLeast(0L) else 0L
+                },
                 interfaces = inter
             )
         }

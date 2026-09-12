@@ -359,6 +359,7 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
                                             maxBytes: maxVisibleBytes,
                                             isCentered: isCentered,
                                             barWidth: widget.barWidth,
+                                            availableBarHeight: constraints.maxHeight - 26.0,
                                             colorScheme: colorScheme,
                                           ),
                                         ),
@@ -417,6 +418,7 @@ class _HistoryBarItem extends StatelessWidget {
     required this.maxBytes,
     required this.isCentered,
     required this.barWidth,
+    required this.availableBarHeight,
     required this.colorScheme,
   });
 
@@ -424,6 +426,7 @@ class _HistoryBarItem extends StatelessWidget {
   final int maxBytes;
   final bool isCentered;
   final double barWidth;
+  final double availableBarHeight;
   final ColorScheme colorScheme;
 
   @override
@@ -433,85 +436,79 @@ class _HistoryBarItem extends StatelessWidget {
     final cellBytes = data.primaryQueryBytes ?? data.cellularBytes;
     final wifiBytes = data.secondaryQueryBytes ?? data.wifiBytes;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableBarHeight = constraints.maxHeight - labelHeight;
+    final double totalBarHeight = (totalBytes > 0 && maxBytes > 0)
+        ? ((totalBytes / maxBytes) * (availableBarHeight - 12.0)).clamp(4.0, availableBarHeight - 12.0)
+        : 3.0;
 
-        final double totalBarHeight = (totalBytes > 0 && maxBytes > 0)
-            ? ((totalBytes / maxBytes) * (availableBarHeight - 12.0)).clamp(4.0, availableBarHeight - 12.0)
-            : 3.0;
+    final double cellRatio = totalBytes > 0 ? (cellBytes / totalBytes) : 0.0;
+    final double wifiRatio = totalBytes > 0 ? (wifiBytes / totalBytes) : 0.0;
+    final double cellHeight = totalBarHeight * cellRatio;
+    final double wifiHeight = totalBarHeight * wifiRatio;
 
-        final double cellRatio = totalBytes > 0 ? (cellBytes / totalBytes) : 0.0;
-        final double wifiRatio = totalBytes > 0 ? (wifiBytes / totalBytes) : 0.0;
-        final double cellHeight = totalBarHeight * cellRatio;
-        final double wifiHeight = totalBarHeight * wifiRatio;
+    final cellColor = isCentered
+        ? AppColorSchemes.cellularColor
+        : AppColorSchemes.cellularColor.withValues(alpha: 0.45);
 
-        final cellColor = isCentered
-            ? AppColorSchemes.cellularColor
-            : AppColorSchemes.cellularColor.withValues(alpha: 0.45);
+    final wifiColor = isCentered
+        ? AppColorSchemes.wifiColor
+        : AppColorSchemes.wifiColor.withValues(alpha: 0.45);
 
-        final wifiColor = isCentered
-            ? AppColorSchemes.wifiColor
-            : AppColorSchemes.wifiColor.withValues(alpha: 0.45);
-
-        return Column(
-          children: [
-            // Bar Column
-            Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: isCentered ? barWidth : barWidth * 0.88,
-                  height: totalBarHeight,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Column(
-                      children: [
-                        // Wi-Fi / Secondary (Top)
-                        if (wifiHeight > 0)
-                          Expanded(
-                            flex: (wifiHeight * 100).round(),
-                            child: Container(color: wifiColor),
-                          ),
-                        // Cellular / Primary (Bottom)
-                        if (cellHeight > 0)
-                          Expanded(
-                            flex: (cellHeight * 100).round(),
-                            child: Container(color: cellColor),
-                          ),
-                      ],
-                    ),
-                  ),
+    return Column(
+      children: [
+        // Bar Column
+        Expanded(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              width: isCentered ? barWidth : barWidth * 0.88,
+              height: totalBarHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Column(
+                  children: [
+                    // Wi-Fi / Secondary (Top)
+                    if (wifiHeight > 0)
+                      Expanded(
+                        flex: (wifiHeight * 100).round(),
+                        child: Container(color: wifiColor),
+                      ),
+                    // Cellular / Primary (Bottom)
+                    if (cellHeight > 0)
+                      Expanded(
+                        flex: (cellHeight * 100).round(),
+                        child: Container(color: cellColor),
+                      ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+          ),
+        ),
+        const SizedBox(height: 6),
 
-            // Day Number / Month Label
-            SizedBox(
-              height: labelHeight - 6,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    DateFormat('d').format(data.date),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isCentered ? FontWeight.w800 : FontWeight.w500,
-                      color: isCentered
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
+        // Day Number / Month Label
+        SizedBox(
+          height: labelHeight - 6,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                DateFormat('d').format(data.date),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isCentered ? FontWeight.w800 : FontWeight.w500,
+                  color: isCentered
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

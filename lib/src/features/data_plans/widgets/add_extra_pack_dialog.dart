@@ -100,7 +100,7 @@ class _AddExtraPackDialogState extends State<AddExtraPackDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Container(
       margin: const EdgeInsets.only(top: 60),

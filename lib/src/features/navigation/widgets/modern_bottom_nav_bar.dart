@@ -74,7 +74,7 @@ class ModernBottomNavBar extends ConsumerWidget {
     final isAmoled = prefs.themeMode == ThemeModePreference.amoled;
     final enableBlur = prefs.enableBlur;
 
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     // Background color determination based on theme & blur preferences
     final Color barBackground;
@@ -100,6 +100,99 @@ class ModernBottomNavBar extends ConsumerWidget {
       alpha: isAmoled ? 0.5 : (isDark ? 0.35 : 0.08),
     );
 
+    final barContent = Container(
+      decoration: BoxDecoration(
+        color: barBackground,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final totalWidth = constraints.maxWidth;
+          final itemCount = items.length;
+          final itemWidth = totalWidth / itemCount;
+          final indicatorWidth = itemWidth - 12;
+          final indicatorHeight = 52.0;
+
+          return Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              // Smooth Animated Sliding Indicator Pill
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 320),
+                curve: Curves.easeOutCubic,
+                left: (selectedIndex * itemWidth) + 6,
+                top: (constraints.maxHeight - indicatorHeight) / 2,
+                width: indicatorWidth,
+                height: indicatorHeight,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isAmoled
+                        ? colorScheme.primaryContainer.withValues(alpha: 0.45)
+                        : colorScheme.primaryContainer.withValues(
+                            alpha: isDark ? 0.55 : 0.75,
+                          ),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.15),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Navigation Destination Item Buttons
+              Row(
+                children: List.generate(itemCount, (index) {
+                  final item = items[index];
+                  final isSelected = index == selectedIndex;
+
+                  return Expanded(
+                    child: Semantics(
+                      selected: isSelected,
+                      label: item.label,
+                      button: true,
+                      child: Tooltip(
+                        message: item.tooltip ?? item.label,
+                        waitDuration: const Duration(milliseconds: 700),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              if (selectedIndex == index) {
+                                AppHaptics.selectionTick();
+                                onDestinationReselected?.call(index);
+                              } else {
+                                AppHaptics.selectionTick();
+                                onDestinationSelected(index);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(24),
+                            splashColor: colorScheme.primary.withValues(alpha: 0.12),
+                            highlightColor: Colors.transparent,
+                            child: Center(
+                              child: _ModernNavItemContent(
+                                item: item,
+                                isSelected: isSelected,
+                                colorScheme: colorScheme,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
     return Container(
       margin: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding > 0 ? bottomPadding + 8 : 16),
       height: 66,
@@ -116,103 +209,12 @@ class ModernBottomNavBar extends ConsumerWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: enableBlur
-              ? ImageFilter.blur(sigmaX: 18.0, sigmaY: 18.0)
-              : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: barBackground,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                color: borderColor,
-                width: 1.0,
-              ),
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final totalWidth = constraints.maxWidth;
-                final itemCount = items.length;
-                final itemWidth = totalWidth / itemCount;
-                final indicatorWidth = itemWidth - 12;
-                final indicatorHeight = 52.0;
-
-                return Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    // Smooth Animated Sliding Indicator Pill
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 320),
-                      curve: Curves.easeOutCubic,
-                      left: (selectedIndex * itemWidth) + 6,
-                      top: (constraints.maxHeight - indicatorHeight) / 2,
-                      width: indicatorWidth,
-                      height: indicatorHeight,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isAmoled
-                              ? colorScheme.primaryContainer.withValues(alpha: 0.45)
-                              : colorScheme.primaryContainer.withValues(
-                                  alpha: isDark ? 0.55 : 0.75,
-                                ),
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: colorScheme.primary.withValues(alpha: 0.15),
-                            width: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Navigation Destination Item Buttons
-                    Row(
-                      children: List.generate(itemCount, (index) {
-                        final item = items[index];
-                        final isSelected = index == selectedIndex;
-
-                        return Expanded(
-                          child: Semantics(
-                            selected: isSelected,
-                            label: item.label,
-                            button: true,
-                            child: Tooltip(
-                              message: item.tooltip ?? item.label,
-                              waitDuration: const Duration(milliseconds: 700),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    if (selectedIndex == index) {
-                                      AppHaptics.selectionTick();
-                                      onDestinationReselected?.call(index);
-                                    } else {
-                                      AppHaptics.selectionTick();
-                                      onDestinationSelected(index);
-                                    }
-                                  },
-                                  borderRadius: BorderRadius.circular(24),
-                                  splashColor: colorScheme.primary.withValues(alpha: 0.12),
-                                  highlightColor: Colors.transparent,
-                                  child: Center(
-                                    child: _ModernNavItemContent(
-                                      item: item,
-                                      isSelected: isSelected,
-                                      colorScheme: colorScheme,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ),
+        child: enableBlur
+            ? BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18.0, sigmaY: 18.0),
+                child: barContent,
+              )
+            : barContent,
       ),
     );
   }

@@ -61,85 +61,22 @@ class DataPlansScreen extends ConsumerWidget {
       extendBodyBehindAppBar: prefs.enableBlur,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: prefs.enableBlur
-                ? ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0)
-                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-            child: AppBar(
-              backgroundColor: prefs.enableBlur
-                  ? colorScheme.surface.withValues(alpha: 0.75)
-                  : colorScheme.surface,
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.pie_chart_rounded,
-                      color: colorScheme.onPrimaryContainer,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Data Plans',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.add_rounded),
-                  tooltip: 'Add / Configure SIM',
-                  onPressed: () {
-                    AppHaptics.contextClick();
-                    final nextSlotIndex = state.plans.length;
-                    _openPlanConfig(context, ref, slotIndex: nextSlotIndex);
-                  },
+        child: prefs.enableBlur
+            ? ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+                  child: _buildAppBar(context, ref, colorScheme, theme, state, isConfigured, selectedPlan, controller, true),
                 ),
-                if (isConfigured && selectedPlan != null) ...[
-                  IconButton(
-                    icon: const Icon(Icons.tune_rounded),
-                    tooltip: 'Configure Selected SIM',
-                    onPressed: () {
-                      AppHaptics.contextClick();
-                      _openPlanConfig(
-                        context,
-                        ref,
-                        plan: selectedPlan,
-                        slotIndex: state.selectedPlanIndex,
-                      );
-                    },
-                  ),
-                ],
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Refresh Plans',
-                  onPressed: () async {
-                    AppHaptics.selectionTick();
-                    await controller.refresh();
-                  },
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ),
-        ),
+              )
+            : _buildAppBar(context, ref, colorScheme, theme, state, isConfigured, selectedPlan, controller, false),
       ),
       body: RefreshIndicator(
         onRefresh: controller.refresh,
         child: ListView(
           controller: scrollController,
           padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-            bottom: MediaQuery.of(context).padding.bottom + 96,
+            top: MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
+            bottom: MediaQuery.paddingOf(context).bottom + 96,
           ),
           children: [
             // Error Banner (if any)
@@ -350,4 +287,82 @@ class DataPlansScreen extends ConsumerWidget {
       ],
     );
   }
+
+  AppBar _buildAppBar(
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+    ThemeData theme,
+    dynamic state,
+    bool isConfigured,
+    DataPlan? selectedPlan,
+    dynamic controller,
+    bool hasBlur,
+  ) {
+    return AppBar(
+      backgroundColor: hasBlur
+          ? colorScheme.surface.withValues(alpha: 0.75)
+          : colorScheme.surface,
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.pie_chart_rounded,
+              color: colorScheme.onPrimaryContainer,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'Data Plans',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.add_rounded),
+          tooltip: 'Add / Configure SIM',
+          onPressed: () {
+            AppHaptics.contextClick();
+            final nextSlotIndex = state.plans.length as int;
+            _openPlanConfig(context, ref, slotIndex: nextSlotIndex);
+          },
+        ),
+        if (isConfigured && selectedPlan != null) ...[
+          IconButton(
+            icon: const Icon(Icons.tune_rounded),
+            tooltip: 'Configure Selected SIM',
+            onPressed: () {
+              AppHaptics.contextClick();
+              _openPlanConfig(
+                context,
+                ref,
+                plan: selectedPlan,
+                slotIndex: state.selectedPlanIndex as int,
+              );
+            },
+          ),
+        ],
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded),
+          tooltip: 'Refresh Plans',
+          onPressed: () async {
+            AppHaptics.selectionTick();
+            await controller.refresh();
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 }
+

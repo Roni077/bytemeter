@@ -8,7 +8,7 @@ class IntListConverter extends TypeConverter<List<int>, String> {
 
   @override
   List<int> fromSql(String fromDb) {
-    if (fromDb.isEmpty) return const <int>[];
+    if (fromDb.isEmpty || fromDb == '[]') return const <int>[];
     try {
       final decoded = jsonDecode(fromDb) as List<dynamic>;
       return decoded.map((e) => (e as num).toInt()).toList(growable: false);
@@ -19,6 +19,7 @@ class IntListConverter extends TypeConverter<List<int>, String> {
 
   @override
   String toSql(List<int> value) {
+    if (value.isEmpty) return '[]';
     return jsonEncode(value);
   }
 }

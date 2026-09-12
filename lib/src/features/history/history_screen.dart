@@ -58,53 +58,14 @@ class HistoryScreen extends ConsumerWidget {
       extendBodyBehindAppBar: prefs.enableBlur,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: prefs.enableBlur
-                ? ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0)
-                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-            child: AppBar(
-              backgroundColor: prefs.enableBlur
-                  ? colorScheme.surface.withValues(alpha: 0.75)
-                  : colorScheme.surface,
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.bar_chart_rounded,
-                      color: colorScheme.onPrimaryContainer,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'History & Analytics',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.tune_rounded),
-                  tooltip: 'Filter Queries',
-                  onPressed: () {
-                    AppHaptics.contextClick();
-                    _openFilterBottomSheet(context, ref);
-                  },
+        child: prefs.enableBlur
+            ? ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+                  child: _buildAppBar(context, ref, colorScheme, theme, true),
                 ),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ),
-        ),
+              )
+            : _buildAppBar(context, ref, colorScheme, theme, false),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -117,8 +78,8 @@ class HistoryScreen extends ConsumerWidget {
             parent: BouncingScrollPhysics(),
           ),
           padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
-            bottom: MediaQuery.of(context).padding.bottom + 96,
+            top: MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
+            bottom: MediaQuery.paddingOf(context).bottom + 96,
           ),
           children: [
             // 1. 90-Day Fling-Scrollable Timeline Bar Chart
@@ -200,6 +161,30 @@ class HistoryScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  AppBar _buildAppBar(
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+    ThemeData theme,
+    bool hasBlur,
+  ) {
+    return AppBar(
+      title: const Text('History & Analytics'),
+      backgroundColor: hasBlur
+          ? colorScheme.surface.withValues(alpha: 0.7)
+          : colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.tune_rounded),
+          tooltip: 'Filter & Compare',
+          onPressed: () => _openFilterBottomSheet(context, ref),
+        ),
+      ],
     );
   }
 }

@@ -42,6 +42,12 @@ class ByteMeterForegroundService : Service() {
     private var speedThresholdKb: Long = -1L
     private var silentChannelActive: Boolean = false
 
+    private lateinit var openAppPendingIntent: PendingIntent
+    private var lastTitle: String? = null
+    private var lastContent: String? = null
+    private var lastIcon: androidx.core.graphics.drawable.IconCompat? = null
+    private var lastIsSilent: Boolean? = null
+
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
@@ -65,6 +71,14 @@ class ByteMeterForegroundService : Service() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         trafficSnapshotManager = TrafficSnapshotManager(applicationContext)
         notificationIconHelper = NotificationIconHelper(applicationContext)
+        openAppPendingIntent = createOpenAppPendingIntent()
+
+        val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        isMetric1000 = prefs.getBoolean("flutter.metric_base_1000", false)
+        inBits = prefs.getBoolean("flutter.speed_unit_bits", false)
+        aodMode = prefs.getBoolean("flutter.aod_mode_enabled", false)
+        val thresholdInt = prefs.getInt("flutter.silent_speed_threshold_kb", -1)
+        speedThresholdKb = if (thresholdInt != -1) thresholdInt.toLong() else -1L
 
         createNotificationChannels()
 
@@ -100,7 +114,11 @@ class ByteMeterForegroundService : Service() {
             Log.e(TAG, "Failed to start foreground service", e)
         }
 
-        startTicker()
+        val powerManager = getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+        val isInteractive = powerManager?.isInteractive ?: true
+        if (isInteractive || aodMode) {
+            startTicker()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -121,6 +139,13 @@ class ByteMeterForegroundService : Service() {
         tickerJob?.cancel()
         serviceScope.cancel()
         trafficSnapshotManager.close()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        notificationManager.cancel(NOTIFICATION_ID)
         super.onDestroy()
     }
 
@@ -200,6 +225,14 @@ class ByteMeterForegroundService : Service() {
             notificationIconHelper.createIcon(speedNum, speedUnit)
         }
 
+        if (title == lastTitle && content == lastContent && smallIcon == lastIcon && isSilent == lastIsSilent) {
+            return
+        }
+        lastTitle = title
+        lastContent = content
+        lastIcon = smallIcon
+        lastIsSilent = isSilent
+
         val notification = NotificationCompat.Builder(
             this,
             if (isSilent) CHANNEL_ID_SILENT else CHANNEL_ID_DEFAULT
@@ -211,7 +244,7 @@ class ByteMeterForegroundService : Service() {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setContentIntent(createOpenAppPendingIntent())
+            .setContentIntent(openAppPendingIntent)
             .setPriority(if (isSilent) NotificationCompat.PRIORITY_MIN else NotificationCompat.PRIORITY_LOW)
             .build()
 
@@ -232,7 +265,7 @@ class ByteMeterForegroundService : Service() {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setContentIntent(createOpenAppPendingIntent())
+            .setContentIntent(openAppPendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }

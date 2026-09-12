@@ -51,6 +51,8 @@ class _AppItemCardState extends State<AppItemCard> {
           app.iconBytes!,
           width: 40,
           height: 40,
+          cacheWidth: 120,
+          cacheHeight: 120,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(app, colorScheme),
         ),

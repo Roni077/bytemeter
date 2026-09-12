@@ -88,6 +88,8 @@ class DataSize implements Comparable<DataSize> {
   double toTB([MetricBase base = MetricBase.decimal1000]) =>
       bytes / (base.baseValue * base.baseValue * base.baseValue * base.baseValue);
 
+  static final RegExp _trailingZerosRegex = RegExp(r'\.?0+$');
+
   /// Formats the data size into structured [DataSizeParts] with integer, decimal, and unit components.
   DataSizeParts toParts({
     MetricBase base = MetricBase.decimal1000,
@@ -131,7 +133,7 @@ class DataSize implements Comparable<DataSize> {
       // Trim trailing zeros after decimal point
       final fixed = value.toStringAsFixed(decimals);
       formattedNumber = fixed.contains('.')
-          ? fixed.replaceAll(RegExp(r'\.?0+$'), '')
+          ? fixed.replaceAll(_trailingZerosRegex, '')
           : fixed;
     }
 

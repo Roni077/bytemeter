@@ -30,7 +30,18 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
+          await customStatement('PRAGMA foreign_keys = ON;');
+          await customStatement('PRAGMA journal_mode = WAL;');
+          await customStatement('PRAGMA synchronous = NORMAL;');
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_extra_packs_plan ON extra_packs_table (plan_hashed_subscriber_id);',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_extra_packs_expiry ON extra_packs_table (expiry_date);',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_data_plans_slot ON data_plans_table (sim_slot_index);',
+          );
         },
       );
 }

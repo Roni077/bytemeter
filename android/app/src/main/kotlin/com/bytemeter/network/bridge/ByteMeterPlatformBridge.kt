@@ -181,29 +181,47 @@ class ByteMeterPlatformBridge(
             }
             ChannelConstants.ENCRYPT_SUBSCRIBER_ID -> {
                 val id = call.argument<String>("id") ?: ""
-                try {
-                    val encrypted = CryptoManager.encrypt(id)
-                    result.success(encrypted)
-                } catch (e: Exception) {
-                    result.error("CRYPTO_ERROR", e.message, null)
+                scope.launch {
+                    try {
+                        val encrypted = CryptoManager.encrypt(id)
+                        withContext(Dispatchers.Main) {
+                            result.success(encrypted)
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            result.error("CRYPTO_ERROR", e.message, null)
+                        }
+                    }
                 }
             }
             ChannelConstants.DECRYPT_SUBSCRIBER_ID -> {
                 val encrypted = call.argument<String>("encrypted") ?: ""
-                try {
-                    val decrypted = CryptoManager.decrypt(encrypted)
-                    result.success(decrypted)
-                } catch (e: Exception) {
-                    result.error("CRYPTO_ERROR", e.message, null)
+                scope.launch {
+                    try {
+                        val decrypted = CryptoManager.decrypt(encrypted)
+                        withContext(Dispatchers.Main) {
+                            result.success(decrypted)
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            result.error("CRYPTO_ERROR", e.message, null)
+                        }
+                    }
                 }
             }
             ChannelConstants.HASH_SUBSCRIBER_ID -> {
                 val id = call.argument<String>("id") ?: ""
-                try {
-                    val hash = CryptoManager.hashIdentifier(id)
-                    result.success(hash)
-                } catch (e: Exception) {
-                    result.error("CRYPTO_ERROR", e.message, null)
+                scope.launch {
+                    try {
+                        val hash = CryptoManager.hashIdentifier(id)
+                        withContext(Dispatchers.Main) {
+                            result.success(hash)
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            result.error("CRYPTO_ERROR", e.message, null)
+                        }
+                    }
                 }
             }
             else -> {

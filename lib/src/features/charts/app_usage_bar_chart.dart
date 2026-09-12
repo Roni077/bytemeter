@@ -123,6 +123,8 @@ class _AppUsageRow extends StatelessWidget {
                             app.iconBytes!,
                             width: 24,
                             height: 24,
+                            cacheWidth: 72,
+                            cacheHeight: 72,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) => Icon(
                               Icons.android_rounded,

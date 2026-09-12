@@ -17,6 +17,7 @@ class NetworkUsageRepository {
 
   // In-memory cache of installed apps by UID
   final Map<int, AppInfo> _appCache = <int, AppInfo>{};
+  final Set<String> _failedIconPackages = <String>{};
   bool _appsLoaded = false;
 
   /// Fetches all installed apps, caching them in-memory.
@@ -27,6 +28,7 @@ class NetworkUsageRepository {
 
     final apps = await _bridge.getInstalledApps();
     _appCache.clear();
+    _failedIconPackages.clear();
     for (final app in apps) {
       _appCache[app.uid] = app;
     }
@@ -45,11 +47,14 @@ class NetworkUsageRepository {
       if (app.iconBytes == null &&
           !app.isSpecial &&
           app.packageName.isNotEmpty &&
-          !app.packageName.startsWith('uid_')) {
+          !app.packageName.startsWith('uid_') &&
+          !_failedIconPackages.contains(app.packageName)) {
         final icon = await _bridge.getAppIcon(app.packageName);
         if (icon != null) {
           app = app.copyWith(iconBytes: icon);
           _appCache[uid] = app;
+        } else {
+          _failedIconPackages.add(app.packageName);
         }
       }
       return app;
@@ -224,13 +229,26 @@ class NetworkUsageRepository {
       }
     }
 
-    final appUsages = <AppUsage>[];
+    final validBuckets = <UsageData>[];
     for (final bucket in allBuckets) {
       final uid = bucket.uid ?? SpecialUids.uidUnknown;
-      final isExcluded = excludedUids.contains(uid);
-      if (isExcluded) continue;
+      if (!excludedUids.contains(uid)) {
+        validBuckets.add(bucket);
+      }
+    }
 
-      final appInfo = await getAppInfo(uid);
+    if (!_appsLoaded) {
+      await getInstalledApps();
+    }
+
+    final appInfos = await Future.wait(
+      validBuckets.map((b) => getAppInfo(b.uid ?? SpecialUids.uidUnknown)),
+    );
+
+    final appUsages = <AppUsage>[];
+    for (int i = 0; i < validBuckets.length; i++) {
+      final bucket = validBuckets[i];
+      final appInfo = appInfos[i];
       final percentage = peakBytes > 0 ? (bucket.totalBytes / peakBytes).clamp(0.0, 1.0) : 0.0;
 
       appUsages.add(

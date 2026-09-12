@@ -80,7 +80,7 @@ class _ExcludedAppsSheetState extends State<ExcludedAppsSheet> {
     final apps = _filteredApps;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.sizeOf(context).height * 0.85,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -198,7 +198,13 @@ class _ExcludedAppsSheetState extends State<ExcludedAppsSheet> {
                           ),
                           alignment: Alignment.center,
                           child: (app.iconBytes != null && app.iconBytes!.isNotEmpty)
-                              ? Image.memory(app.iconBytes!, width: 32, height: 32)
+                              ? Image.memory(
+                                  app.iconBytes!,
+                                  width: 32,
+                                  height: 32,
+                                  cacheWidth: 96,
+                                  cacheHeight: 96,
+                                )
                               : Icon(
                                   Icons.android_rounded,
                                   color: colorScheme.primary,

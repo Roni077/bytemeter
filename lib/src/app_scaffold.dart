@@ -23,6 +23,7 @@ class AppScaffold extends StatefulWidget {
 
 class _AppScaffoldState extends State<AppScaffold> {
   late int _currentIndex;
+  late final Set<int> _visitedIndices;
   late final ScrollController _homeScrollController;
   late final ScrollController _historyScrollController;
   late final ScrollController _plansScrollController;
@@ -32,6 +33,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _visitedIndices = {_currentIndex};
     _homeScrollController = ScrollController();
     _historyScrollController = ScrollController();
     _plansScrollController = ScrollController();
@@ -70,6 +72,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     AppHaptics.selectionTick();
     setState(() {
       _currentIndex = index;
+      _visitedIndices.add(index);
     });
   }
 
@@ -85,32 +88,43 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
   }
 
+  Widget _buildTab(int index) {
+    if (!_visitedIndices.contains(index)) {
+      return const SizedBox.shrink();
+    }
+    switch (index) {
+      case 0:
+        return HomeScreen(
+          scrollController: _homeScrollController,
+        );
+      case 1:
+        return HistoryScreen(
+          scrollController: _historyScrollController,
+        );
+      case 2:
+        return DataPlansScreen(
+          scrollController: _plansScrollController,
+        );
+      case 3:
+        return SettingsScreen(
+          scrollController: _settingsScrollController,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screens = <Widget>[
-      HomeScreen(
-        scrollController: _homeScrollController,
-      ),
-      HistoryScreen(
-        scrollController: _historyScrollController,
-      ),
-      DataPlansScreen(
-        scrollController: _plansScrollController,
-      ),
-      SettingsScreen(
-        scrollController: _settingsScrollController,
-      ),
-    ];
-
     return Scaffold(
       extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          for (int i = 0; i < screens.length; i++)
+          for (int i = 0; i < 4; i++)
             TickerMode(
               enabled: i == _currentIndex,
-              child: screens[i],
+              child: _buildTab(i),
             ),
         ],
       ),
