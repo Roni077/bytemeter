@@ -9,11 +9,15 @@ class FakeSettingsBridge extends NativeTrafficBridge {
   FakeSettingsBridge({
     this.hasPermission = true,
     this.isIgnoringBattery = false,
+    this.notifPermission = true,
+    this.phonePermission = false,
     this.serviceRunning = false,
   });
 
   bool hasPermission;
   bool isIgnoringBattery;
+  bool notifPermission;
+  bool phonePermission;
   bool serviceRunning;
   int updateSettingsCalls = 0;
 
@@ -23,6 +27,24 @@ class FakeSettingsBridge extends NativeTrafficBridge {
   @override
   Future<bool> requestUsagePermission() async {
     hasPermission = true;
+    return true;
+  }
+
+  @override
+  Future<bool> hasNotificationPermission() async => notifPermission;
+
+  @override
+  Future<bool> requestNotificationPermission() async {
+    notifPermission = true;
+    return true;
+  }
+
+  @override
+  Future<bool> hasPhonePermission() async => phonePermission;
+
+  @override
+  Future<bool> requestPhonePermission() async {
+    phonePermission = true;
     return true;
   }
 

@@ -6,7 +6,9 @@ class SettingsState {
   const SettingsState({
     this.preferences = const UserPreferences(),
     this.hasUsagePermission = false,
+    this.hasNotificationPermission = false,
     this.isIgnoringBatteryOptimizations = false,
+    this.hasPhonePermission = false,
     this.isServiceRunning = false,
     this.isLoading = false,
     this.errorMessage,
@@ -18,7 +20,9 @@ class SettingsState {
 
   final UserPreferences preferences;
   final bool hasUsagePermission;
+  final bool hasNotificationPermission;
   final bool isIgnoringBatteryOptimizations;
+  final bool hasPhonePermission;
   final bool isServiceRunning;
   final bool isLoading;
   final String? errorMessage;
@@ -30,7 +34,9 @@ class SettingsState {
   SettingsState copyWith({
     UserPreferences? preferences,
     bool? hasUsagePermission,
+    bool? hasNotificationPermission,
     bool? isIgnoringBatteryOptimizations,
+    bool? hasPhonePermission,
     bool? isServiceRunning,
     bool? isLoading,
     String? errorMessage,
@@ -43,8 +49,11 @@ class SettingsState {
     return SettingsState(
       preferences: preferences ?? this.preferences,
       hasUsagePermission: hasUsagePermission ?? this.hasUsagePermission,
+      hasNotificationPermission:
+          hasNotificationPermission ?? this.hasNotificationPermission,
       isIgnoringBatteryOptimizations:
           isIgnoringBatteryOptimizations ?? this.isIgnoringBatteryOptimizations,
+      hasPhonePermission: hasPhonePermission ?? this.hasPhonePermission,
       isServiceRunning: isServiceRunning ?? this.isServiceRunning,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),

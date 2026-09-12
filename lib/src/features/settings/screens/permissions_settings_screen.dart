@@ -19,8 +19,10 @@ class PermissionsSettingsScreen extends ConsumerWidget {
     final prefs = state.preferences;
 
     final grantedCount = (state.hasUsagePermission ? 1 : 0) +
-        (state.isIgnoringBatteryOptimizations ? 1 : 0);
-    final allGranted = grantedCount == 2;
+        (state.hasNotificationPermission ? 1 : 0) +
+        (state.isIgnoringBatteryOptimizations ? 1 : 0) +
+        (state.hasPhonePermission ? 1 : 0);
+    final allGranted = state.hasUsagePermission && state.isIgnoringBatteryOptimizations;
 
     return Scaffold(
       extendBodyBehindAppBar: prefs.enableBlur,
@@ -134,9 +136,13 @@ class PermissionsSettingsScreen extends ConsumerWidget {
           // 2. Permission Status Detailed Card
           PermissionStatusCard(
             hasUsagePermission: state.hasUsagePermission,
+            hasNotificationPermission: state.hasNotificationPermission,
             isIgnoringBatteryOptimizations: state.isIgnoringBatteryOptimizations,
+            hasPhonePermission: state.hasPhonePermission,
             onRequestUsagePermission: () => controller.requestUsagePermission(),
+            onRequestNotificationPermission: () => controller.requestNotificationPermission(),
             onRequestBatteryExemption: () => controller.requestIgnoreBatteryOptimizations(),
+            onRequestPhonePermission: () => controller.requestPhonePermission(),
           ),
 
           const SizedBox(height: 16),

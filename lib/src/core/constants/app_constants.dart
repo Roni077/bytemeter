@@ -24,6 +24,7 @@ class AppConstants {
   static const String prefAodModeEnabled = 'aod_mode_enabled';
   static const String prefHomeDefaultType = 'home_default_type';
   static const String prefOverviewDefaultType = 'overview_default_type';
+  static const String prefHasCompletedOnboarding = 'has_completed_onboarding';
 
   // Database
   static const String databaseName = 'bytemeter_db.sqlite';

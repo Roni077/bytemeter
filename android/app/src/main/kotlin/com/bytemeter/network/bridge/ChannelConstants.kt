@@ -9,6 +9,10 @@ object ChannelConstants {
     const val REQUEST_USAGE_PERMISSION = "requestUsagePermission"
     const val IS_IGNORING_BATTERY_OPTIMIZATIONS = "isIgnoringBatteryOptimizations"
     const val REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = "requestIgnoreBatteryOptimizations"
+    const val HAS_NOTIFICATION_PERMISSION = "hasNotificationPermission"
+    const val REQUEST_NOTIFICATION_PERMISSION = "requestNotificationPermission"
+    const val HAS_PHONE_PERMISSION = "hasPhonePermission"
+    const val REQUEST_PHONE_PERMISSION = "requestPhonePermission"
 
     // Service Lifecycle & Configuration
     const val START_FOREGROUND_SERVICE = "startForegroundService"

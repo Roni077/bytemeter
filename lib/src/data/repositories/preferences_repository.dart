@@ -7,6 +7,7 @@ import '../models/enums.dart';
 /// Immutable state snapshot of all user preferences.
 class UserPreferences {
   const UserPreferences({
+    this.hasCompletedOnboarding = false,
     this.speedUnitType = SpeedUnitType.bytes,
     this.metricBase = MetricBase.decimal1000,
     this.themeMode = ThemeModePreference.auto,
@@ -18,6 +19,7 @@ class UserPreferences {
     this.homeDefaultNetworkType = NetworkType.mobile,
   });
 
+  final bool hasCompletedOnboarding;
   final SpeedUnitType speedUnitType;
   final MetricBase metricBase;
   final ThemeModePreference themeMode;
@@ -32,6 +34,7 @@ class UserPreferences {
   NetworkType get overviewDefaultNetworkType => homeDefaultNetworkType;
 
   UserPreferences copyWith({
+    bool? hasCompletedOnboarding,
     SpeedUnitType? speedUnitType,
     MetricBase? metricBase,
     ThemeModePreference? themeMode,
@@ -44,6 +47,8 @@ class UserPreferences {
     NetworkType? overviewDefaultNetworkType,
   }) {
     return UserPreferences(
+      hasCompletedOnboarding:
+          hasCompletedOnboarding ?? this.hasCompletedOnboarding,
       speedUnitType: speedUnitType ?? this.speedUnitType,
       metricBase: metricBase ?? this.metricBase,
       themeMode: themeMode ?? this.themeMode,
@@ -82,6 +87,7 @@ class PreferencesRepository {
   Stream<UserPreferences> get preferencesStream => _stateController.stream;
 
   UserPreferences _loadFromPrefs() {
+    final hasCompletedOnboarding = _prefs.getBool(AppConstants.prefHasCompletedOnboarding) ?? false;
     final speedUnitBits = _prefs.getBool(AppConstants.prefSpeedUnitBits) ?? false;
     final metric1000 = _prefs.getBool(AppConstants.prefMetricBase1000) ?? true;
     final themeStr = _prefs.getString(AppConstants.prefThemeMode) ?? 'auto';
@@ -95,6 +101,7 @@ class PreferencesRepository {
         'mobile';
 
     return UserPreferences(
+      hasCompletedOnboarding: hasCompletedOnboarding,
       speedUnitType: speedUnitBits ? SpeedUnitType.bits : SpeedUnitType.bytes,
       metricBase: metric1000 ? MetricBase.decimal1000 : MetricBase.binary1024,
       themeMode: ThemeModePreference.values.firstWhere(
@@ -197,6 +204,12 @@ class PreferencesRepository {
   /// Backward-compatible alias for [setHomeDefaultNetworkType].
   Future<void> setOverviewDefaultNetworkType(NetworkType type) async {
     await setHomeDefaultNetworkType(type);
+  }
+
+  /// Sets whether the user has completed the first-run onboarding setup wizard.
+  Future<void> setHasCompletedOnboarding(bool completed) async {
+    await _prefs.setBool(AppConstants.prefHasCompletedOnboarding, completed);
+    _emitUpdate(_currentPreferences.copyWith(hasCompletedOnboarding: completed));
   }
 
   /// Resets all user preferences to factory defaults.

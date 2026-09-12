@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/core_providers.dart';
 import '../../core/utils/haptics.dart';
 import '../../data/models/data_plan.dart';
 import 'plan_config_screen.dart';
@@ -50,34 +52,93 @@ class DataPlansScreen extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final state = ref.watch(plansControllerProvider);
     final controller = ref.read(plansControllerProvider.notifier);
+    final prefs = ref.watch(preferencesRepositoryProvider).current;
 
     final selectedPlan = state.selectedPlan;
     final isConfigured = state.isConfigured;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Data Plans',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'Add / Configure SIM',
-            onPressed: () {
-              final nextSlotIndex = state.plans.length;
-              _openPlanConfig(context, ref, slotIndex: nextSlotIndex);
-            },
+      extendBodyBehindAppBar: prefs.enableBlur,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: prefs.enableBlur
+                ? ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0)
+                : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+            child: AppBar(
+              backgroundColor: prefs.enableBlur
+                  ? colorScheme.surface.withValues(alpha: 0.75)
+                  : colorScheme.surface,
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.pie_chart_rounded,
+                      color: colorScheme.onPrimaryContainer,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Data Plans',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.add_rounded),
+                  tooltip: 'Add / Configure SIM',
+                  onPressed: () {
+                    AppHaptics.contextClick();
+                    final nextSlotIndex = state.plans.length;
+                    _openPlanConfig(context, ref, slotIndex: nextSlotIndex);
+                  },
+                ),
+                if (isConfigured && selectedPlan != null) ...[
+                  IconButton(
+                    icon: const Icon(Icons.tune_rounded),
+                    tooltip: 'Configure Selected SIM',
+                    onPressed: () {
+                      AppHaptics.contextClick();
+                      _openPlanConfig(
+                        context,
+                        ref,
+                        plan: selectedPlan,
+                        slotIndex: state.selectedPlanIndex,
+                      );
+                    },
+                  ),
+                ],
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded),
+                  tooltip: 'Refresh Plans',
+                  onPressed: () async {
+                    AppHaptics.selectionTick();
+                    await controller.refresh();
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
           ),
-          const SizedBox(width: 8),
-        ],
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: controller.refresh,
         child: ListView(
           controller: scrollController,
           padding: EdgeInsets.only(
-            top: 8,
+            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
             bottom: MediaQuery.of(context).padding.bottom + 96,
           ),
           children: [

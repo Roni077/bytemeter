@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'src/app_scaffold.dart';
 import 'src/core/providers/core_providers.dart';
 import 'src/core/theme/app_theme.dart';
+import 'src/features/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +46,9 @@ class ByteMeterApp extends ConsumerWidget {
           title: 'ByteMeter',
           debugShowCheckedModeBanner: false,
           theme: themeData,
-          home: const AppScaffold(),
+          home: currentPrefs.hasCompletedOnboarding
+              ? const AppScaffold()
+              : const OnboardingScreen(),
         );
       },
     );

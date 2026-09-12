@@ -1,8 +1,10 @@
 package com.bytemeter.network.bridge
 
+import android.Manifest
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -11,6 +13,8 @@ import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.bytemeter.network.crypto.CryptoManager
 import com.bytemeter.network.services.ByteMeterForegroundService
 import com.bytemeter.network.services.TrafficSnapshot
@@ -56,6 +60,20 @@ class ByteMeterPlatformBridge(
             }
             ChannelConstants.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS -> {
                 requestIgnoreBatteryOptimizations()
+                result.success(true)
+            }
+            ChannelConstants.HAS_NOTIFICATION_PERMISSION -> {
+                result.success(hasNotificationPermission())
+            }
+            ChannelConstants.REQUEST_NOTIFICATION_PERMISSION -> {
+                requestNotificationPermission()
+                result.success(true)
+            }
+            ChannelConstants.HAS_PHONE_PERMISSION -> {
+                result.success(hasPhonePermission())
+            }
+            ChannelConstants.REQUEST_PHONE_PERMISSION -> {
+                requestPhonePermission()
                 result.success(true)
             }
             ChannelConstants.START_FOREGROUND_SERVICE -> {
@@ -231,6 +249,49 @@ class ByteMeterPlatformBridge(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to request ignore battery optimizations", e)
             }
+        }
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        return NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+
+    private fun requestNotificationPermission() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            } else {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open notification settings", e)
+        }
+    }
+
+    private fun hasPhonePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_PHONE_STATE
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestPhonePermission() {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open application details settings", e)
         }
     }
 

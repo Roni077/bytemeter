@@ -262,5 +262,25 @@ void main() {
       expect(find.byType(DataPlansScreen), findsOneWidget);
       expect(find.text('Data Plans'), findsOneWidget);
     });
+
+    testWidgets('DataPlansScreen renders modern glassmorphic AppBar with leading icon and action buttons',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildTestApp());
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byIcon(Icons.pie_chart_rounded), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.add_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.refresh_rounded), findsOneWidget);
+    });
   });
 }

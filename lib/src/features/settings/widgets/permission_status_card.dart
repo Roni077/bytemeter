@@ -9,12 +9,20 @@ class PermissionStatusCard extends StatelessWidget {
     required this.isIgnoringBatteryOptimizations,
     required this.onRequestUsagePermission,
     required this.onRequestBatteryExemption,
+    this.hasNotificationPermission = true,
+    this.hasPhonePermission = false,
+    this.onRequestNotificationPermission,
+    this.onRequestPhonePermission,
   });
 
   final bool hasUsagePermission;
   final bool isIgnoringBatteryOptimizations;
   final VoidCallback onRequestUsagePermission;
   final VoidCallback onRequestBatteryExemption;
+  final bool hasNotificationPermission;
+  final bool hasPhonePermission;
+  final VoidCallback? onRequestNotificationPermission;
+  final VoidCallback? onRequestPhonePermission;
 
   @override
   Widget build(BuildContext context) {
@@ -70,19 +78,55 @@ class PermissionStatusCard extends StatelessWidget {
 
             const Divider(height: 24),
 
-            // 2. Battery Optimization Exemption Item
+            // 2. Notification Permission Item
+            _buildPermissionItem(
+              context: context,
+              icon: Icons.notifications_active_outlined,
+              title: 'Status Bar Notifications',
+              subtitle:
+                  'Required on Android 13+ to show live download & upload speeds on the status bar.',
+              isGranted: hasNotificationPermission,
+              grantedLabel: 'Allowed',
+              actionLabel: 'Allow',
+              onAction: () {
+                AppHaptics.contextClick();
+                onRequestNotificationPermission?.call();
+              },
+            ),
+
+            const Divider(height: 24),
+
+            // 3. Battery Optimization Exemption Item
             _buildPermissionItem(
               context: context,
               icon: Icons.battery_charging_full_rounded,
               title: 'Battery Optimization Exemption',
               subtitle:
-                  'Prevents Android Doze mode from halting the foreground speed notification.',
+                  'Prevents Android Doze mode and task killers from halting background speed monitoring.',
               isGranted: isIgnoringBatteryOptimizations,
               grantedLabel: 'Unrestricted',
               actionLabel: 'Allow Exemption',
               onAction: () {
                 AppHaptics.contextClick();
                 onRequestBatteryExemption();
+              },
+            ),
+
+            const Divider(height: 24),
+
+            // 4. Phone State Access Item
+            _buildPermissionItem(
+              context: context,
+              icon: Icons.sim_card_outlined,
+              title: 'Phone State Access (Optional)',
+              subtitle:
+                  'Identifies multi-carrier SIM slots for accurate mobile data plan quota tracking.',
+              isGranted: hasPhonePermission,
+              grantedLabel: 'Granted',
+              actionLabel: 'Grant Access',
+              onAction: () {
+                AppHaptics.contextClick();
+                onRequestPhonePermission?.call();
               },
             ),
           ],

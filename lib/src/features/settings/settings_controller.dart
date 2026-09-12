@@ -34,13 +34,17 @@ class SettingsController extends StateNotifier<SettingsState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final hasPerm = await bridge.hasUsagePermission();
+      final hasNotif = await bridge.hasNotificationPermission();
       final ignoringBattery = await bridge.isIgnoringBatteryOptimizations();
+      final hasPhone = await bridge.hasPhonePermission();
       final serviceRunning = await bridge.isServiceRunning();
 
       state = state.copyWith(
         preferences: prefsRepo.current,
         hasUsagePermission: hasPerm,
+        hasNotificationPermission: hasNotif,
         isIgnoringBatteryOptimizations: ignoringBattery,
+        hasPhonePermission: hasPhone,
         isServiceRunning: serviceRunning,
         isLoading: false,
       );
@@ -56,12 +60,16 @@ class SettingsController extends StateNotifier<SettingsState> {
   Future<void> refreshPermissionStatuses() async {
     try {
       final hasPerm = await bridge.hasUsagePermission();
+      final hasNotif = await bridge.hasNotificationPermission();
       final ignoringBattery = await bridge.isIgnoringBatteryOptimizations();
+      final hasPhone = await bridge.hasPhonePermission();
       final serviceRunning = await bridge.isServiceRunning();
 
       state = state.copyWith(
         hasUsagePermission: hasPerm,
+        hasNotificationPermission: hasNotif,
         isIgnoringBatteryOptimizations: ignoringBattery,
+        hasPhonePermission: hasPhone,
         isServiceRunning: serviceRunning,
       );
     } catch (_) {
@@ -142,6 +150,20 @@ class SettingsController extends StateNotifier<SettingsState> {
   /// Requests battery optimization exemption.
   Future<bool> requestIgnoreBatteryOptimizations() async {
     final result = await bridge.requestIgnoreBatteryOptimizations();
+    await refreshPermissionStatuses();
+    return result;
+  }
+
+  /// Requests notification permissions.
+  Future<bool> requestNotificationPermission() async {
+    final result = await bridge.requestNotificationPermission();
+    await refreshPermissionStatuses();
+    return result;
+  }
+
+  /// Requests phone state permissions.
+  Future<bool> requestPhonePermission() async {
+    final result = await bridge.requestPhonePermission();
     await refreshPermissionStatuses();
     return result;
   }

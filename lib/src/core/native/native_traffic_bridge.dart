@@ -17,7 +17,7 @@ class NativeTrafficBridge {
     try {
       final result = await _channel.invokeMethod<bool>('hasUsagePermission');
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
@@ -27,7 +27,7 @@ class NativeTrafficBridge {
     try {
       final result = await _channel.invokeMethod<bool>('requestUsagePermission');
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
@@ -37,7 +37,7 @@ class NativeTrafficBridge {
     try {
       final result = await _channel.invokeMethod<bool>('isIgnoringBatteryOptimizations');
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
@@ -47,7 +47,47 @@ class NativeTrafficBridge {
     try {
       final result = await _channel.invokeMethod<bool>('requestIgnoreBatteryOptimizations');
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Checks if notifications are enabled for ByteMeter.
+  Future<bool> hasNotificationPermission() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('hasNotificationPermission');
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Opens system notification settings for ByteMeter.
+  Future<bool> requestNotificationPermission() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('requestNotificationPermission');
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Checks if `READ_PHONE_STATE` is granted to ByteMeter.
+  Future<bool> hasPhonePermission() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('hasPhonePermission');
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Opens app details settings to grant phone state permission.
+  Future<bool> requestPhonePermission() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('requestPhonePermission');
+      return result ?? false;
+    } catch (_) {
       return false;
     }
   }
@@ -57,7 +97,7 @@ class NativeTrafficBridge {
     try {
       final result = await _channel.invokeMethod<bool>('startForegroundService');
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
@@ -67,7 +107,7 @@ class NativeTrafficBridge {
     try {
       final result = await _channel.invokeMethod<bool>('stopForegroundService');
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
@@ -77,7 +117,7 @@ class NativeTrafficBridge {
     try {
       final result = await _channel.invokeMethod<bool>('isServiceRunning');
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
@@ -104,7 +144,7 @@ class NativeTrafficBridge {
         },
       );
       return result ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
