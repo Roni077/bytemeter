@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream
 
 class AppListHelper(private val context: Context) {
     private val packageManager: PackageManager = context.packageManager
+    private val iconCache = android.util.LruCache<String, ByteArray>(64)
 
     suspend fun getInstalledApps(): List<Map<String, Any?>> = withContext(Dispatchers.IO) {
         val installedApps = try {
@@ -33,29 +34,20 @@ class AppListHelper(private val context: Context) {
         }
 
         val appList = installedApps.distinctBy { it.uid }.map { appInfo ->
-            async {
-                val label = try {
-                    appInfo.loadLabel(packageManager).toString()
-                } catch (e: Exception) {
-                    appInfo.packageName
-                }
-
-                val iconBytes = try {
-                    val drawable = packageManager.getApplicationIcon(appInfo)
-                    drawableToPngByteArray(drawable)
-                } catch (e: Exception) {
-                    null
-                }
-
-                mapOf(
-                    "uid" to appInfo.uid,
-                    "packageName" to appInfo.packageName,
-                    "label" to label,
-                    "iconBytes" to iconBytes,
-                    "isSpecial" to false
-                )
+            val label = try {
+                appInfo.loadLabel(packageManager).toString()
+            } catch (e: Exception) {
+                appInfo.packageName
             }
-        }.awaitAll().toMutableList()
+
+            mapOf(
+                "uid" to appInfo.uid,
+                "packageName" to appInfo.packageName,
+                "label" to label,
+                "iconBytes" to null,
+                "isSpecial" to false
+            )
+        }.toMutableList()
 
         val specialApps = listOf(
             mapOf("uid" to NetworkStatsHelper.UID_ALL, "packageName" to "system.all_apps", "label" to "All Apps", "iconBytes" to null, "isSpecial" to true),
@@ -66,6 +58,30 @@ class AppListHelper(private val context: Context) {
         )
 
         specialApps + appList
+    }
+
+    suspend fun getAppIcon(packageName: String): ByteArray? = withContext(Dispatchers.IO) {
+        if (packageName.isEmpty() || packageName.startsWith("system.") || packageName.startsWith("uid_")) {
+            return@withContext null
+        }
+        iconCache.get(packageName)?.let { return@withContext it }
+
+        try {
+            val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getApplicationInfo(packageName, 0)
+            }
+            val drawable = packageManager.getApplicationIcon(appInfo)
+            val bytes = drawableToPngByteArray(drawable)
+            if (bytes != null) {
+                iconCache.put(packageName, bytes)
+            }
+            bytes
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun launchApp(packageName: String): Boolean {

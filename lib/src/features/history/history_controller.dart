@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/core_providers.dart';
 import '../../core/utils/date_utils.dart';
@@ -69,8 +70,16 @@ class HistoryController extends StateNotifier<HistoryState> {
     }
   }
 
+  Timer? _dateSelectDebounce;
+
+  @override
+  void dispose() {
+    _dateSelectDebounce?.cancel();
+    super.dispose();
+  }
+
   /// Updates the centered/selected date and fetches day-specific app and hour breakdowns.
-  Future<void> selectDate(DateTime date) async {
+  Future<void> selectDate(DateTime date, {bool debounce = false}) async {
     final normalizedDate = AppDateUtils.startOfDay(date);
     if (state.selectedDate.year == normalizedDate.year &&
         state.selectedDate.month == normalizedDate.month &&
@@ -80,7 +89,19 @@ class HistoryController extends StateNotifier<HistoryState> {
     }
 
     state = state.copyWith(selectedDate: normalizedDate);
-    await loadDetailsForSelectedDate(normalizedDate);
+
+    if (debounce) {
+      _dateSelectDebounce?.cancel();
+      final completer = Completer<void>();
+      _dateSelectDebounce = Timer(const Duration(milliseconds: 150), () async {
+        await loadDetailsForSelectedDate(normalizedDate);
+        if (!completer.isCompleted) completer.complete();
+      });
+      return completer.future;
+    } else {
+      _dateSelectDebounce?.cancel();
+      await loadDetailsForSelectedDate(normalizedDate);
+    }
   }
 
   /// Loads ranked app breakdown and 2-hour interval buckets for [date].
@@ -249,7 +270,93 @@ class HistoryController extends StateNotifier<HistoryState> {
     final days = AppDateUtils.get90DayRange(referenceDate);
     final results = <DailyHistoryData>[];
 
-    for (final day in days) {
+    // Optimize: when not querying a single app, use high-speed batch platform call
+    if (primaryQuery.appUid == null && (!isComparisonEnabled || secondaryQuery.appUid == null)) {
+      final batchData = await usageRepo.getCombinedTimeline90Days(
+        referenceDate: referenceDate,
+      );
+
+      if (batchData.isNotEmpty) {
+        final batchMap = <int, Map<String, dynamic>>{};
+        for (final item in batchData) {
+          final sTime = (item['startTime'] as num?)?.toInt();
+          if (sTime != null) {
+            final dayDate = DateTime.fromMillisecondsSinceEpoch(sTime);
+            final key = dayDate.year * 10000 + dayDate.month * 100 + dayDate.day;
+            batchMap[key] = item;
+          }
+        }
+
+        for (final day in days) {
+          final key = day.year * 10000 + day.month * 100 + day.day;
+          final item = batchMap[key];
+
+          final cellUp = (item?['cellUpload'] as num?)?.toInt() ?? 0;
+          final cellDown = (item?['cellDownload'] as num?)?.toInt() ?? 0;
+          final cellTot = (item?['cellTotal'] as num?)?.toInt() ?? (cellUp + cellDown);
+
+          final wifiUp = (item?['wifiUpload'] as num?)?.toInt() ?? 0;
+          final wifiDown = (item?['wifiDownload'] as num?)?.toInt() ?? 0;
+          final wifiTot = (item?['wifiTotal'] as num?)?.toInt() ?? (wifiUp + wifiDown);
+
+          final mobileUsage = UsageData(
+            uploadBytes: cellUp,
+            downloadBytes: cellDown,
+            totalBytes: cellTot,
+            startTime: day,
+            endTime: AppDateUtils.endOfDay(day),
+          );
+          final wifiUsage = UsageData(
+            uploadBytes: wifiUp,
+            downloadBytes: wifiDown,
+            totalBytes: wifiTot,
+            startTime: day,
+            endTime: AppDateUtils.endOfDay(day),
+          );
+
+          final cellBytes = _filterUsageByDirection(mobileUsage, primaryQuery.direction);
+          final wifiBytes = _filterUsageByDirection(wifiUsage, primaryQuery.direction);
+
+          int primaryBytes;
+          if (primaryQuery.networkType == NetworkType.mobile) {
+            primaryBytes = cellBytes;
+          } else if (primaryQuery.networkType == NetworkType.wifi) {
+            primaryBytes = wifiBytes;
+          } else {
+            primaryBytes = cellBytes + wifiBytes;
+          }
+
+          int? secondaryBytes;
+          if (isComparisonEnabled) {
+            final secCell = _filterUsageByDirection(mobileUsage, secondaryQuery.direction);
+            final secWifi = _filterUsageByDirection(wifiUsage, secondaryQuery.direction);
+
+            if (secondaryQuery.networkType == NetworkType.mobile) {
+              secondaryBytes = secCell;
+            } else if (secondaryQuery.networkType == NetworkType.wifi) {
+              secondaryBytes = secWifi;
+            } else {
+              secondaryBytes = secCell + secWifi;
+            }
+          }
+
+          results.add(
+            DailyHistoryData(
+              date: day,
+              cellularBytes: cellBytes,
+              wifiBytes: wifiBytes,
+              primaryQueryBytes: primaryBytes,
+              secondaryQueryBytes: isComparisonEnabled ? secondaryBytes : null,
+            ),
+          );
+        }
+
+        return results;
+      }
+    }
+
+    // Fallback: parallel day querying (for app-specific filters or fallback)
+    final dayFutures = days.map((day) async {
       int cellBytes = 0;
       int wifiBytes = 0;
       int primaryBytes = 0;
@@ -269,25 +376,28 @@ class HistoryController extends StateNotifier<HistoryState> {
           );
         }
 
-        results.add(
-          DailyHistoryData(
-            date: day,
-            cellularBytes: primaryBytes,
-            wifiBytes: secondaryBytes,
-            primaryQueryBytes: primaryBytes,
-            secondaryQueryBytes: isComparisonEnabled ? secondaryBytes : 0,
-          ),
+        return DailyHistoryData(
+          date: day,
+          cellularBytes: primaryBytes,
+          wifiBytes: secondaryBytes,
+          primaryQueryBytes: primaryBytes,
+          secondaryQueryBytes: isComparisonEnabled ? secondaryBytes : 0,
         );
       } else {
         // Aggregate device timeline queries
-        final mobileUsage = await usageRepo.getDayUsage(
-          date: day,
-          networkType: NetworkType.mobile,
-        );
-        final wifiUsage = await usageRepo.getDayUsage(
-          date: day,
-          networkType: NetworkType.wifi,
-        );
+        final usages = await Future.wait([
+          usageRepo.getDayUsage(
+            date: day,
+            networkType: NetworkType.mobile,
+          ),
+          usageRepo.getDayUsage(
+            date: day,
+            networkType: NetworkType.wifi,
+          ),
+        ]);
+
+        final mobileUsage = usages[0];
+        final wifiUsage = usages[1];
 
         cellBytes = _filterUsageByDirection(mobileUsage, primaryQuery.direction);
         wifiBytes = _filterUsageByDirection(wifiUsage, primaryQuery.direction);
@@ -315,19 +425,17 @@ class HistoryController extends StateNotifier<HistoryState> {
           }
         }
 
-        results.add(
-          DailyHistoryData(
-            date: day,
-            cellularBytes: cellBytes,
-            wifiBytes: wifiBytes,
-            primaryQueryBytes: primaryBytes,
-            secondaryQueryBytes: isComparisonEnabled ? secondaryBytes : null,
-          ),
+        return DailyHistoryData(
+          date: day,
+          cellularBytes: cellBytes,
+          wifiBytes: wifiBytes,
+          primaryQueryBytes: primaryBytes,
+          secondaryQueryBytes: isComparisonEnabled ? secondaryBytes : null,
         );
       }
-    }
+    });
 
-    return results;
+    return Future.wait(dayFutures);
   }
 
   /// Calculates total bytes for a specific custom query on a calendar day.

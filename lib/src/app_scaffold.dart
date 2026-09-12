@@ -106,7 +106,13 @@ class _AppScaffoldState extends State<AppScaffold> {
       extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
-        children: screens,
+        children: [
+          for (int i = 0; i < screens.length; i++)
+            TickerMode(
+              enabled: i == _currentIndex,
+              child: screens[i],
+            ),
+        ],
       ),
       bottomNavigationBar: ModernBottomNavBar(
         selectedIndex: _currentIndex,

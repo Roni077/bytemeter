@@ -255,6 +255,46 @@ class NativeTrafficBridge {
     return const [];
   }
 
+  /// Queries combined 90-day (or custom range) daily cellular and Wi-Fi timeline in a single batch call.
+  Future<List<Map<String, dynamic>>> queryCombinedTimeline({
+    String? subscriberId,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    try {
+      final result = await _channel.invokeListMethod<dynamic>(
+        'queryCombinedTimeline',
+        <String, dynamic>{
+          'subscriberId': subscriberId,
+          'startTime': startTime.millisecondsSinceEpoch,
+          'endTime': endTime.millisecondsSinceEpoch,
+        },
+      );
+      if (result != null) {
+        return result
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList(growable: false);
+      }
+    } catch (_) {
+      // Fallback on platform error or missing plugin in tests
+    }
+    return const [];
+  }
+
+  /// Loads icon byte array on-demand for a single application.
+  Future<Uint8List?> getAppIcon(String packageName) async {
+    try {
+      final result = await _channel.invokeMethod<Uint8List>(
+        'getAppIcon',
+        <String, dynamic>{'packageName': packageName},
+      );
+      return result;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Launches an application by its package name.
   Future<bool> launchApp(String packageName) async {
     try {

@@ -34,35 +34,46 @@ class HomeController extends StateNotifier<HomeState> {
 
     try {
       final now = referenceTime ?? DateTime.now();
-      final hasPerm = await usageRepo.hasUsagePermission();
 
-      // Today usage
-      final todayUsage = await usageRepo.getTodayUsage(
+      // Launch independent queries concurrently
+      final hasPermFuture = usageRepo.hasUsagePermission();
+      final todayUsageFuture = usageRepo.getTodayUsage(
         networkType: state.selectedNetworkType,
         now: now,
       );
+      final trendFuture = calculate7DayTrend(
+        now: now,
+        networkType: state.selectedNetworkType,
+      );
+      final weekDataFuture = _loadWeeklyBreakdown(now: now);
+      final topAppsFuture = _loadTopApps(
+        now: now,
+        networkType: state.selectedNetworkType,
+      );
 
-      // 4-Week weighted prediction
-      final predictedBytes = await calculate4WeekPrediction(
+      final hasPerm = await hasPermFuture;
+      if (hasPerm != state.hasUsagePermission) {
+        state = state.copyWith(hasUsagePermission: hasPerm);
+      }
+      final todayUsage = await todayUsageFuture;
+
+      final predictedBytesFuture = calculate4WeekPrediction(
         now: now,
         networkType: state.selectedNetworkType,
         todayUsageBytes: todayUsage.totalBytes,
       );
 
-      // 7-Day moving average trend
-      final trendPercentage = await calculate7DayTrend(
-        now: now,
-        networkType: state.selectedNetworkType,
-      );
+      final results = await Future.wait([
+        predictedBytesFuture,
+        trendFuture,
+        weekDataFuture,
+        topAppsFuture,
+      ]);
 
-      // Weekly Mon-Sun breakdown
-      final weekData = await _loadWeeklyBreakdown(now: now);
-
-      // Top apps today
-      final topApps = await _loadTopApps(
-        now: now,
-        networkType: state.selectedNetworkType,
-      );
+      final predictedBytes = results[0] as int;
+      final trendPercentage = results[1] as double;
+      final weekData = results[2] as List<WeeklyDayData>;
+      final topApps = results[3] as List<AppUsageBarData>;
 
       // Determine today's weekday index (0 = Mon ... 6 = Sun)
       final currentWeekdayIndex = now.weekday - 1;
@@ -230,37 +241,31 @@ class HomeController extends StateNotifier<HomeState> {
     final monday = AppDateUtils.startOfDay(now.subtract(Duration(days: currentWeekday - 1)));
     final todayMidnight = AppDateUtils.startOfDay(now);
 
-    final weekDays = <WeeklyDayData>[];
-
-    for (int d = 0; d < 7; d++) {
+    final weekDayFutures = List.generate(7, (d) async {
       final dayDate = monday.add(Duration(days: d));
 
       if (dayDate.isAfter(todayMidnight)) {
         // Future days in current week have 0 usage
-        weekDays.add(WeeklyDayData(
+        return WeeklyDayData(
           date: dayDate,
           cellularBytes: 0,
           wifiBytes: 0,
-        ));
+        );
       } else {
-        final cellUsage = await usageRepo.getDayUsage(
-          date: dayDate,
-          networkType: NetworkType.mobile,
-        );
-        final wifiUsage = await usageRepo.getDayUsage(
-          date: dayDate,
-          networkType: NetworkType.wifi,
-        );
+        final usages = await Future.wait([
+          usageRepo.getDayUsage(date: dayDate, networkType: NetworkType.mobile),
+          usageRepo.getDayUsage(date: dayDate, networkType: NetworkType.wifi),
+        ]);
 
-        weekDays.add(WeeklyDayData(
+        return WeeklyDayData(
           date: dayDate,
-          cellularBytes: cellUsage.totalBytes,
-          wifiBytes: wifiUsage.totalBytes,
-        ));
+          cellularBytes: usages[0].totalBytes,
+          wifiBytes: usages[1].totalBytes,
+        );
       }
-    }
+    });
 
-    return weekDays;
+    return Future.wait(weekDayFutures);
   }
 
   /// Loads top bandwidth consuming applications today.

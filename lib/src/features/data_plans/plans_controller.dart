@@ -37,7 +37,9 @@ class PlansController extends StateNotifier<PlansState> {
     try {
       final now = referenceTime ?? DateTime.now();
       final dbPlans = await planRepo.getPlans();
-      final installedApps = await usageRepo.getInstalledApps();
+      final installedApps = state.installedApps.isNotEmpty
+          ? state.installedApps
+          : await usageRepo.getInstalledApps();
 
       // Build effective multi-SIM plans list (Ensure at least Slot 0 and Slot 1 exist)
       final effectivePlans = <DataPlan>[];

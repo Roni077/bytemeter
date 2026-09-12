@@ -59,25 +59,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final prefsRepo = ref.watch(preferencesRepositoryProvider);
     final prefs = prefsRepo.current;
 
-    // Listen to real-time speed stream from platform bridge
-    final liveSpeedAsync = ref.watch(speedStreamProvider);
-    final liveSnapshot = liveSpeedAsync.valueOrNull ?? homeState.currentSpeed;
-
-    // Format live transfer speed for secondary badge
-    final upSpeedFormatted = DataSize(liveSnapshot.uploadBytesPerSec).format(
-      base: prefs.metricBase,
-      unitType: prefs.speedUnitType,
-      isRate: true,
-      decimals: 1,
-    );
-    final downSpeedFormatted = DataSize(liveSnapshot.downloadBytesPerSec).format(
-      base: prefs.metricBase,
-      unitType: prefs.speedUnitType,
-      isRate: true,
-      decimals: 1,
-    );
-    final secondarySpeedLabel = '↑ $upSpeedFormatted  ·  ↓ $downSpeedFormatted';
-
     return Scaffold(
       extendBodyBehindAppBar: prefs.enableBlur,
       appBar: PreferredSize(
@@ -160,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 dataSize: DataSize(homeState.todayUsage.totalBytes),
                 networkType: homeState.selectedNetworkType,
                 label: "TODAY'S USAGE",
-                secondaryLabel: secondarySpeedLabel,
+                secondaryWidget: const _LiveSpeedSecondaryBadge(),
                 size: 280,
                 onTap: () {
                   AppHaptics.contextClick();
@@ -223,3 +204,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
 /// Backward compatibility alias
 typedef OverviewScreen = HomeScreen;
+
+/// Isolated granular consumer widget displaying real-time upload and download speeds.
+/// Keeps 1-second ticker rebuilds confined strictly to this leaf text widget.
+class _LiveSpeedSecondaryBadge extends ConsumerWidget {
+  const _LiveSpeedSecondaryBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final liveSpeedAsync = ref.watch(speedStreamProvider);
+    final prefsRepo = ref.watch(preferencesRepositoryProvider);
+    final prefs = prefsRepo.current;
+    final snapshot = liveSpeedAsync.valueOrNull;
+
+    final upSpeedFormatted = DataSize(snapshot?.uploadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final downSpeedFormatted = DataSize(snapshot?.downloadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final secondarySpeedLabel = '↑ $upSpeedFormatted  ·  ↓ $downSpeedFormatted';
+
+    return Text(
+      secondarySpeedLabel,
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+}

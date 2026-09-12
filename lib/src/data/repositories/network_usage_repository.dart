@@ -41,7 +41,18 @@ class NetworkUsageRepository {
     }
 
     if (_appCache.containsKey(uid)) {
-      return _appCache[uid]!;
+      var app = _appCache[uid]!;
+      if (app.iconBytes == null &&
+          !app.isSpecial &&
+          app.packageName.isNotEmpty &&
+          !app.packageName.startsWith('uid_')) {
+        final icon = await _bridge.getAppIcon(app.packageName);
+        if (icon != null) {
+          app = app.copyWith(iconBytes: icon);
+          _appCache[uid] = app;
+        }
+      }
+      return app;
     }
 
     // Special UID fallbacks
@@ -158,6 +169,23 @@ class NetworkUsageRepository {
     }
 
     return results;
+  }
+
+  /// Fetches combined 90-day timeline for cellular and Wi-Fi in a single batch query.
+  Future<List<Map<String, dynamic>>> getCombinedTimeline90Days({
+    String? subscriberId,
+    DateTime? referenceDate,
+  }) async {
+    final days = AppDateUtils.get90DayRange(referenceDate);
+    if (days.isEmpty) return const [];
+    final start = AppDateUtils.startOfDay(days.first);
+    final end = AppDateUtils.endOfDay(days.last);
+
+    return _bridge.queryCombinedTimeline(
+      subscriberId: subscriberId,
+      startTime: start,
+      endTime: end,
+    );
   }
 
   /// Fetches ranked per-app bandwidth consumption for a given time window.

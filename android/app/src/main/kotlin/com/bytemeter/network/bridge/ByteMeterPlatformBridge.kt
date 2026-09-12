@@ -153,6 +153,27 @@ class ByteMeterPlatformBridge(
                     }
                 }
             }
+            ChannelConstants.GET_APP_ICON -> {
+                val packageName = call.argument<String>("packageName") ?: ""
+                scope.launch {
+                    val iconBytes = appListHelper.getAppIcon(packageName)
+                    withContext(Dispatchers.Main) {
+                        result.success(iconBytes)
+                    }
+                }
+            }
+            ChannelConstants.QUERY_COMBINED_TIMELINE -> {
+                val subscriberId = call.argument<String>("subscriberId")
+                val startTime = call.argument<Number>("startTime")?.toLong() ?: 0L
+                val endTime = call.argument<Number>("endTime")?.toLong() ?: System.currentTimeMillis()
+
+                scope.launch {
+                    val timeline = networkStatsHelper.queryCombinedTimeline(subscriberId, startTime, endTime)
+                    withContext(Dispatchers.Main) {
+                        result.success(timeline)
+                    }
+                }
+            }
             ChannelConstants.LAUNCH_APP -> {
                 val packageName = call.argument<String>("packageName") ?: ""
                 val launched = appListHelper.launchApp(packageName)

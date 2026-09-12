@@ -132,7 +132,7 @@ class HistoryScreen extends ConsumerWidget {
                         historyData: historyState.timelineData,
                         selectedDate: historyState.selectedDate,
                         onDateSelected: (date, data) {
-                          controller.selectDate(date);
+                          controller.selectDate(date, debounce: true);
                         },
                       ),
               ),

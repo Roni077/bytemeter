@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -65,6 +66,7 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
   int _currentCenteredIndex = 0;
   int _lastHapticIndex = -1;
   bool _isSnapping = false;
+  Timer? _scrollDebounceTimer;
 
   double get _itemExtent => widget.barWidth + widget.barSpacing;
 
@@ -91,6 +93,7 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
 
   @override
   void dispose() {
+    _scrollDebounceTimer?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -166,7 +169,10 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
         _currentCenteredIndex = centerIndex;
       });
       if (!_isSnapping) {
-        _notifySelection(centerIndex);
+        _scrollDebounceTimer?.cancel();
+        _scrollDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+          _notifySelection(centerIndex);
+        });
       }
     }
   }
@@ -185,6 +191,8 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
     final nearestIndex = (currentOffset / _itemExtent).round().clamp(0, widget.historyData.length - 1);
     final targetOffset = nearestIndex * _itemExtent;
 
+    _scrollDebounceTimer?.cancel();
+
     if ((targetOffset - currentOffset).abs() > 0.5) {
       _isSnapping = true;
       _scrollController
@@ -193,7 +201,12 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
           )
-          .then((_) => _isSnapping = false);
+          .then((_) {
+            _isSnapping = false;
+            _notifySelection(nearestIndex);
+          });
+    } else {
+      _notifySelection(nearestIndex);
     }
   }
 
@@ -331,21 +344,23 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
                                     final data = widget.historyData[index];
                                     final isCentered = index == _currentCenteredIndex;
 
-                                    return GestureDetector(
-                                      onTap: () => _scrollToIndex(index, animate: true),
-                                      child: Container(
-                                        width: widget.barWidth,
-                                        margin: EdgeInsets.only(
-                                          right: index == widget.historyData.length - 1
-                                              ? 0
-                                              : widget.barSpacing,
-                                        ),
-                                        child: _HistoryBarItem(
-                                          data: data,
-                                          maxBytes: maxVisibleBytes,
-                                          isCentered: isCentered,
-                                          barWidth: widget.barWidth,
-                                          colorScheme: colorScheme,
+                                    return RepaintBoundary(
+                                      child: GestureDetector(
+                                        onTap: () => _scrollToIndex(index, animate: true),
+                                        child: Container(
+                                          width: widget.barWidth,
+                                          margin: EdgeInsets.only(
+                                            right: index == widget.historyData.length - 1
+                                                ? 0
+                                                : widget.barSpacing,
+                                          ),
+                                          child: _HistoryBarItem(
+                                            data: data,
+                                            maxBytes: maxVisibleBytes,
+                                            isCentered: isCentered,
+                                            barWidth: widget.barWidth,
+                                            colorScheme: colorScheme,
+                                          ),
                                         ),
                                       ),
                                     );

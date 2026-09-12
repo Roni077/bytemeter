@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -101,6 +102,33 @@ class MockBridge extends NativeTrafficBridge {
 
   @override
   Future<bool> launchApp(String packageName) async => true;
+
+  @override
+  Future<Uint8List?> getAppIcon(String packageName) async => null;
+
+  @override
+  Future<List<Map<String, dynamic>>> queryCombinedTimeline({
+    String? subscriberId,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    final list = <Map<String, dynamic>>[];
+    var cur = startTime;
+    while (cur.isBefore(endTime)) {
+      list.add({
+        'startTime': cur.millisecondsSinceEpoch,
+        'endTime': cur.add(const Duration(days: 1)).millisecondsSinceEpoch,
+        'cellUpload': 200000000,
+        'cellDownload': 800000000,
+        'cellTotal': 1000000000,
+        'wifiUpload': 100000000,
+        'wifiDownload': 400000000,
+        'wifiTotal': 500000000,
+      });
+      cur = cur.add(const Duration(days: 1));
+    }
+    return list;
+  }
 }
 
 void main() {

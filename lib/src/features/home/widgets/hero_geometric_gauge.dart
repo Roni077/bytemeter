@@ -15,6 +15,7 @@ class HeroGeometricGauge extends StatefulWidget {
     this.networkType = NetworkType.mobile,
     this.label = "TODAY'S USAGE",
     this.secondaryLabel,
+    this.secondaryWidget,
     this.size = 280.0,
     this.onTap,
     this.onLongPress,
@@ -31,6 +32,9 @@ class HeroGeometricGauge extends StatefulWidget {
 
   /// Optional secondary badge text (e.g. "↑ 1.2 MB/s · ↓ 4.5 MB/s").
   final String? secondaryLabel;
+
+  /// Optional secondary badge widget (e.g. isolated live speed consumer).
+  final Widget? secondaryWidget;
 
   /// Diameter size of the gauge canvas.
   final double size;
@@ -165,19 +169,21 @@ class _HeroGeometricGaugeState extends State<HeroGeometricGauge>
                     ),
 
                     // Layer 2: Rotating 12-Sided Cookie Polygon
-                    AnimatedBuilder(
-                      animation: _rotationController,
-                      builder: (context, child) {
-                        return CustomPaint(
-                          size: Size(widget.size, widget.size),
-                          painter: HeroGaugePainter(
-                            rotationAngle: _rotationController.value * 2 * math.pi,
-                            accentColor: accentColor,
-                            containerColor: containerColor,
-                            surfaceColor: colorScheme.surface,
-                          ),
-                        );
-                      },
+                    RepaintBoundary(
+                      child: AnimatedBuilder(
+                        animation: _rotationController,
+                        builder: (context, child) {
+                          return CustomPaint(
+                            size: Size(widget.size, widget.size),
+                            painter: HeroGaugePainter(
+                              rotationAngle: _rotationController.value * 2 * math.pi,
+                              accentColor: accentColor,
+                              containerColor: containerColor,
+                              surfaceColor: colorScheme.surface,
+                            ),
+                          );
+                        },
+                      ),
                     ),
 
                     // Layer 3: Foreground High-Precision 3-Part Typography
@@ -246,7 +252,10 @@ class _HeroGeometricGaugeState extends State<HeroGeometricGauge>
                           ),
 
                           // Optional Secondary Info Subtitle
-                          if (widget.secondaryLabel != null) ...[
+                          if (widget.secondaryWidget != null) ...[
+                            const SizedBox(height: 8),
+                            widget.secondaryWidget!,
+                          ] else if (widget.secondaryLabel != null) ...[
                             const SizedBox(height: 8),
                             Text(
                               widget.secondaryLabel!,
@@ -286,21 +295,21 @@ class HeroGaugePainter extends CustomPainter {
 
   static const int lobes = 12;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final outerRadius = size.width * 0.44;
-    final innerRadius = size.width * 0.38;
+  // Cached geometry path
+  static double _cachedSize = 0.0;
+  static Path? _cachedPath;
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotationAngle);
+  static Path _getCookiePath(double size) {
+    if (_cachedPath != null && _cachedSize == size) {
+      return _cachedPath!;
+    }
 
+    final outerRadius = size * 0.44;
+    final innerRadius = size * 0.38;
     final path = Path();
     final int points = lobes * 2;
     final double angleStep = (2 * math.pi) / points;
 
-    // Build the 12-lobed cookie star polygon path with smooth cubic beziers
     for (int i = 0; i < points; i++) {
       final double currentAngle = i * angleStep;
       final double nextAngle = (i + 1) * angleStep;
@@ -316,7 +325,6 @@ class HeroGaugePainter extends CustomPainter {
         path.moveTo(x1, y1);
       }
 
-      // Control points for organic scalloped cookie edges
       final double midAngle = currentAngle + (angleStep / 2);
       final double midR = (currentR + nextR) / 2 * 1.04;
       final double cx = midR * math.cos(midAngle);
@@ -325,6 +333,23 @@ class HeroGaugePainter extends CustomPainter {
       path.quadraticBezierTo(cx, cy, x2, y2);
     }
     path.close();
+
+    _cachedSize = size;
+    _cachedPath = path;
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final outerRadius = size.width * 0.44;
+    final innerRadius = size.width * 0.38;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotationAngle);
+
+    final path = _getCookiePath(size.width);
 
     // Fill cookie interior with subtle gradient
     final fillPaint = Paint()

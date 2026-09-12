@@ -27,7 +27,9 @@ object ChannelConstants {
 
     // App List & Launcher
     const val GET_INSTALLED_APPS = "getInstalledApps"
+    const val GET_APP_ICON = "getAppIcon"
     const val LAUNCH_APP = "launchApp"
+    const val QUERY_COMBINED_TIMELINE = "queryCombinedTimeline"
 
     // Hardware Keystore Crypto
     const val ENCRYPT_SUBSCRIBER_ID = "encryptSubscriberId"

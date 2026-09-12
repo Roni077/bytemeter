@@ -162,6 +162,57 @@ class NetworkStatsHelper(private val context: Context) {
         result
     }
 
+    suspend fun queryCombinedTimeline(
+        subscriberId: String?,
+        startTime: Long,
+        endTime: Long
+    ): List<Map<String, Any>> = withContext(Dispatchers.IO) {
+        val oneDayMs = 24 * 60 * 60 * 1000L
+        val days = (startTime until endTime step oneDayMs).toList()
+
+        coroutineScope {
+            days.map { dayStart ->
+                val dayEnd = (dayStart + oneDayMs).coerceAtMost(endTime)
+                async {
+                    val mobile = try {
+                        val b = networkStatsManager.querySummaryForDevice(
+                            ConnectivityManager.TYPE_MOBILE,
+                            subscriberId,
+                            dayStart,
+                            dayEnd
+                        )
+                        Pair(b.txBytes.coerceAtLeast(0L), b.rxBytes.coerceAtLeast(0L))
+                    } catch (e: Exception) {
+                        Pair(0L, 0L)
+                    }
+
+                    val wifi = try {
+                        val b = networkStatsManager.querySummaryForDevice(
+                            ConnectivityManager.TYPE_WIFI,
+                            null,
+                            dayStart,
+                            dayEnd
+                        )
+                        Pair(b.txBytes.coerceAtLeast(0L), b.rxBytes.coerceAtLeast(0L))
+                    } catch (e: Exception) {
+                        Pair(0L, 0L)
+                    }
+
+                    mapOf<String, Any>(
+                        "startTime" to dayStart,
+                        "endTime" to dayEnd,
+                        "cellUpload" to mobile.first,
+                        "cellDownload" to mobile.second,
+                        "cellTotal" to (mobile.first + mobile.second),
+                        "wifiUpload" to wifi.first,
+                        "wifiDownload" to wifi.second,
+                        "wifiTotal" to (wifi.first + wifi.second)
+                    )
+                }
+            }.awaitAll()
+        }
+    }
+
     private fun mapNetworkType(type: Int): Int {
         return when (type) {
             0 -> ConnectivityManager.TYPE_MOBILE
