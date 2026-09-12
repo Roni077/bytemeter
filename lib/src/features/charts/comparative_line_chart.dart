@@ -182,55 +182,59 @@ class _ComparativeChartPainter extends CustomPainter {
     final textPainter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
-    )..layout();
+    );
+    try {
+      textPainter.layout();
 
-    final double textY = (size.height - textPainter.height) / 2;
-    final double textX = alignLeft
-        ? 10.0
-        : (size.width - textPainter.width - 10.0);
+      final double textY = (size.height - textPainter.height) / 2;
+      final double textX = alignLeft
+          ? 10.0
+          : (size.width - textPainter.width - 10.0);
 
-    final textRect = Rect.fromLTWH(textX, textY, textPainter.width, textPainter.height);
+      final textRect = Rect.fromLTWH(textX, textY, textPainter.width, textPainter.height);
 
-    // Construct linear gradient shader mask matching bar boundaries over the text's bounding box
-    final textStartRatio = (textRect.left / size.width).clamp(0.0, 1.0);
-    final textEndRatio = (textRect.right / size.width).clamp(0.0, 1.0);
-    final primarySplit = (leftWidth / size.width).clamp(0.0, 1.0);
-    final secondarySplit = ((size.width - rightWidth) / size.width).clamp(0.0, 1.0);
+      // Construct linear gradient shader mask matching bar boundaries over the text's bounding box
+      final textStartRatio = (textRect.left / size.width).clamp(0.0, 1.0);
+      final textEndRatio = (textRect.right / size.width).clamp(0.0, 1.0);
+      final primarySplit = (leftWidth / size.width).clamp(0.0, 1.0);
+      final secondarySplit = ((size.width - rightWidth) / size.width).clamp(0.0, 1.0);
 
-    // Check overlap with primary bar
-    Color textColor = onSurfaceColor;
-    if (textEndRatio <= primarySplit) {
-      textColor = onPrimaryColor;
-    } else if (textStartRatio >= secondarySplit) {
-      textColor = onSecondaryColor;
-    } else if (textStartRatio < primarySplit && textEndRatio > primarySplit) {
-      // Spanning the split boundary: apply horizontal gradient shader
-      final localSplit = ((primarySplit - textStartRatio) / (textEndRatio - textStartRatio)).clamp(0.0, 1.0);
-      final shader = ui.Gradient.linear(
-        Offset(textRect.left, 0),
-        Offset(textRect.right, 0),
-        [onPrimaryColor, onPrimaryColor, onSurfaceColor, onSurfaceColor],
-        [0.0, localSplit, (localSplit + 0.01).clamp(0.0, 1.0), 1.0],
-      );
+      // Check overlap with primary bar
+      if (textStartRatio < primarySplit && textEndRatio > primarySplit) {
+        // Spanning the split boundary: apply horizontal gradient shader
+        final localSplit = ((primarySplit - textStartRatio) / (textEndRatio - textStartRatio)).clamp(0.0, 1.0);
+        final shader = ui.Gradient.linear(
+          Offset(textRect.left, 0),
+          Offset(textRect.right, 0),
+          [onPrimaryColor, onPrimaryColor, onSurfaceColor, onSurfaceColor],
+          [0.0, localSplit, (localSplit + 0.01).clamp(0.0, 1.0), 1.0],
+        );
 
-      final shaderPainter = TextPainter(
-        text: TextSpan(
+        textPainter.text = TextSpan(
           text: text,
           style: style.copyWith(foreground: Paint()..shader = shader),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
+        );
+        textPainter.layout();
+        textPainter.paint(canvas, Offset(textX, textY));
+        return;
+      }
 
-      shaderPainter.paint(canvas, Offset(textX, textY));
-      return;
+      Color textColor = onSurfaceColor;
+      if (textEndRatio <= primarySplit) {
+        textColor = onPrimaryColor;
+      } else if (textStartRatio >= secondarySplit) {
+        textColor = onSecondaryColor;
+      }
+
+      textPainter.text = TextSpan(
+        text: text,
+        style: style.copyWith(color: textColor),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, Offset(textX, textY));
+    } finally {
+      textPainter.dispose();
     }
-
-    final normalPainter = TextPainter(
-      text: TextSpan(text: text, style: style.copyWith(color: textColor)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    normalPainter.paint(canvas, Offset(textX, textY));
   }
 
   @override

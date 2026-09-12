@@ -361,6 +361,22 @@ class _WeeklyBarChartPainter extends CustomPainter {
 
   static const List<String> dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  static final Paint _cellularPaint = Paint()
+    ..color = AppColorSchemes.cellularColor
+    ..style = PaintingStyle.fill;
+
+  static final Paint _wifiPaint = Paint()
+    ..color = AppColorSchemes.wifiColor
+    ..style = PaintingStyle.fill;
+
+  static final Paint _cellularInactivePaint = Paint()
+    ..color = AppColorSchemes.cellularColor.withValues(alpha: 0.4)
+    ..style = PaintingStyle.fill;
+
+  static final Paint _wifiInactivePaint = Paint()
+    ..color = AppColorSchemes.wifiColor.withValues(alpha: 0.4)
+    ..style = PaintingStyle.fill;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (weekData.isEmpty) return;
@@ -402,23 +418,7 @@ class _WeeklyBarChartPainter extends CustomPainter {
       baselinePaint,
     );
 
-    // 2. Draw bars for each day
-    final cellularPaint = Paint()
-      ..color = AppColorSchemes.cellularColor
-      ..style = PaintingStyle.fill;
-
-    final wifiPaint = Paint()
-      ..color = AppColorSchemes.wifiColor
-      ..style = PaintingStyle.fill;
-
-    final cellularInactivePaint = Paint()
-      ..color = AppColorSchemes.cellularColor.withValues(alpha: 0.4)
-      ..style = PaintingStyle.fill;
-
-    final wifiInactivePaint = Paint()
-      ..color = AppColorSchemes.wifiColor.withValues(alpha: 0.4)
-      ..style = PaintingStyle.fill;
-
+    // 2. Selection halo paint
     final haloPaint = Paint()
       ..color = colorScheme.primary.withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;
@@ -475,7 +475,7 @@ class _WeeklyBarChartPainter extends CustomPainter {
           );
           canvas.drawRRect(
             cellRect,
-            isSelected ? cellularPaint : cellularInactivePaint,
+            isSelected ? _cellularPaint : _cellularInactivePaint,
           );
         }
 
@@ -495,7 +495,7 @@ class _WeeklyBarChartPainter extends CustomPainter {
           );
           canvas.drawRRect(
             wifiRect,
-            isSelected ? wifiPaint : wifiInactivePaint,
+            isSelected ? _wifiPaint : _wifiInactivePaint,
           );
         }
 

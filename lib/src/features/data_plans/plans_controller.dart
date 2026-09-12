@@ -73,24 +73,27 @@ class PlansController extends StateNotifier<PlansState> {
           customDays: activePlan.customIntervalDays,
         );
 
-        // 2. Fetch booster packs
-        final extraPacks = await planRepo.getExtraPacks(activePlan.hashedSubscriberId);
+        // 2 & 3. Fetch booster packs, cycle cellular usage & today usage concurrently in parallel
+        final results = await Future.wait([
+          planRepo.getExtraPacks(activePlan.hashedSubscriberId),
+          usageRepo.getPeriodUsage(
+            startTime: cycleWindow.cycleStart,
+            endTime: now,
+            networkType: NetworkType.mobile,
+            subscriberId: activePlan.hashedSubscriberId,
+            excludedUids: activePlan.excludedUids,
+          ),
+          usageRepo.getTodayUsage(
+            networkType: NetworkType.mobile,
+            subscriberId: activePlan.hashedSubscriberId,
+            excludedUids: activePlan.excludedUids,
+            now: now,
+          ),
+        ]);
 
-        // 3. Query cycle cellular usage & today usage
-        final cycleUsage = await usageRepo.getPeriodUsage(
-          startTime: cycleWindow.cycleStart,
-          endTime: now,
-          networkType: NetworkType.mobile,
-          subscriberId: activePlan.hashedSubscriberId,
-          excludedUids: activePlan.excludedUids,
-        );
-
-        final todayUsage = await usageRepo.getTodayUsage(
-          networkType: NetworkType.mobile,
-          subscriberId: activePlan.hashedSubscriberId,
-          excludedUids: activePlan.excludedUids,
-          now: now,
-        );
+        final extraPacks = results[0] as List<DataPlanExtra>;
+        final cycleUsage = results[1] as UsageData;
+        final todayUsage = results[2] as UsageData;
 
         // 4. Calculate total quota including active extra packs
         final activeExtraAllowance = extraPacks

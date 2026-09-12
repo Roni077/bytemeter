@@ -61,10 +61,12 @@ class AppSearchModal extends StatefulWidget {
 class _AppSearchModalState extends State<AppSearchModal> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  List<AppInfo> _defaultSortedApps = const [];
 
   @override
   void initState() {
     super.initState();
+    _computeDefaultSortedApps();
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.trim().toLowerCase();
@@ -73,31 +75,26 @@ class _AppSearchModalState extends State<AppSearchModal> {
   }
 
   @override
+  void didUpdateWidget(covariant AppSearchModal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.installedApps != oldWidget.installedApps) {
+      _computeDefaultSortedApps();
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  List<AppInfo> _getSortedAndFilteredApps() {
-    final query = _searchQuery;
-
-    if (query.isNotEmpty) {
-      return widget.installedApps.where((app) {
-        final matchesLabel = app.label.toLowerCase().contains(query);
-        final matchesPackage = app.packageName.toLowerCase().contains(query);
-        final matchesUid = app.uid.toString().contains(query);
-        return matchesLabel || matchesPackage || matchesUid;
-      }).toList();
-    }
-
-    // When search is empty: Split into Priority apps and Remaining apps
+  void _computeDefaultSortedApps() {
     final priorityApps = <AppInfo>[];
     final remainingApps = <AppInfo>[];
 
     for (final app in widget.installedApps) {
-      final isPriority = _priorityPackageIdentifiers.any(
-        (id) => app.packageName.toLowerCase().contains(id.toLowerCase()),
-      );
+      final pkgLower = app.packageName.toLowerCase();
+      final isPriority = _priorityPackageIdentifiers.any(pkgLower.contains);
       if (isPriority) {
         priorityApps.add(app);
       } else {
@@ -105,11 +102,25 @@ class _AppSearchModalState extends State<AppSearchModal> {
       }
     }
 
-    // Sort remaining alphabetically
+    // Sort remaining and priority alphabetically
     remainingApps.sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
     priorityApps.sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
 
-    return [...priorityApps, ...remainingApps];
+    _defaultSortedApps = [...priorityApps, ...remainingApps];
+  }
+
+  List<AppInfo> _getSortedAndFilteredApps() {
+    final query = _searchQuery;
+    if (query.isEmpty) {
+      return _defaultSortedApps;
+    }
+
+    return _defaultSortedApps.where((app) {
+      final matchesLabel = app.label.toLowerCase().contains(query);
+      final matchesPackage = app.packageName.toLowerCase().contains(query);
+      final matchesUid = app.uid.toString().contains(query);
+      return matchesLabel || matchesPackage || matchesUid;
+    }).toList();
   }
 
   Widget _buildAppIcon(AppInfo app, ColorScheme colorScheme) {

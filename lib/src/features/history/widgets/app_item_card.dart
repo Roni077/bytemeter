@@ -98,8 +98,9 @@ class _AppItemCardState extends State<AppItemCard> {
         !app.packageName.startsWith('uid_') &&
         !app.isSpecial;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return RepaintBoundary(
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: _isExpanded ? 2 : 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -322,8 +323,9 @@ class _AppItemCardState extends State<AppItemCard> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMetricTile({
     required String label,

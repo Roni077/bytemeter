@@ -92,80 +92,82 @@ class HourListView extends StatelessWidget {
         final bucket = buckets[index];
         final timeIcon = _getTimeIcon(bucket.startHour);
 
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        return RepaintBoundary(
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Row: Time Icon + Interval Label + Total Badge
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        timeIcon,
-                        size: 16,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        bucket.timeLabel,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Row: Time Icon + Interval Label + Total Badge
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          timeIcon,
+                          size: 16,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        DataSize(bucket.totalBytes).format(),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onSurface,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          bucket.timeLabel,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          DataSize(bucket.totalBytes).format(),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                // Comparative Line Bar
-                ComparativeLineChart(
-                  primaryBytes: bucket.primaryBytes,
-                  secondaryBytes: bucket.secondaryBytes,
-                  primaryColor: isComparisonActive
-                      ? AppColorSchemes.cellularColor
-                      : AppColorSchemes.downloadColor,
-                  secondaryColor: isComparisonActive
-                      ? AppColorSchemes.wifiColor
-                      : AppColorSchemes.uploadColor,
-                  primaryLabel: primaryLabel,
-                  secondaryLabel: secondaryLabel,
-                  height: 22.0,
-                  borderRadius: 6.0,
-                ),
-              ],
+                  // Comparative Line Bar
+                  ComparativeLineChart(
+                    primaryBytes: bucket.primaryBytes,
+                    secondaryBytes: bucket.secondaryBytes,
+                    primaryColor: isComparisonActive
+                        ? AppColorSchemes.cellularColor
+                        : AppColorSchemes.downloadColor,
+                    secondaryColor: isComparisonActive
+                        ? AppColorSchemes.wifiColor
+                        : AppColorSchemes.uploadColor,
+                    primaryLabel: primaryLabel,
+                    secondaryLabel: secondaryLabel,
+                    height: 22.0,
+                    borderRadius: 6.0,
+                  ),
+                ],
+              ),
             ),
           ),
         );

@@ -37,14 +37,15 @@ class NetworkUsageRepository {
   }
 
   /// Retrieves cached app info for a specific UID, or generates a fallback descriptor.
-  Future<AppInfo> getAppInfo(int uid) async {
+  Future<AppInfo> getAppInfo(int uid, {bool loadIcon = false}) async {
     if (!_appsLoaded) {
       await getInstalledApps();
     }
 
     if (_appCache.containsKey(uid)) {
       var app = _appCache[uid]!;
-      if (app.iconBytes == null &&
+      if (loadIcon &&
+          app.iconBytes == null &&
           !app.isSpecial &&
           app.packageName.isNotEmpty &&
           !app.packageName.startsWith('uid_') &&
@@ -161,19 +162,18 @@ class NetworkUsageRepository {
     DateTime? referenceDate,
   }) async {
     final days = AppDateUtils.get90DayRange(referenceDate);
-    final results = <UsageData>[];
 
-    for (final day in days) {
-      final usage = await getDayUsage(
-        date: day,
-        networkType: networkType,
-        subscriberId: subscriberId,
-        excludedUids: excludedUids,
-      );
-      results.add(usage);
-    }
-
-    return results;
+    // Concurrently fetch all days in parallel rather than 90 sequential IPC awaits
+    return Future.wait(
+      days.map(
+        (day) => getDayUsage(
+          date: day,
+          networkType: networkType,
+          subscriberId: subscriberId,
+          excludedUids: excludedUids,
+        ),
+      ),
+    );
   }
 
   /// Fetches combined 90-day timeline for cellular and Wi-Fi in a single batch query.
@@ -200,20 +200,25 @@ class NetworkUsageRepository {
     required NetworkType networkType,
     String? subscriberId,
     List<int> excludedUids = const <int>[],
+    bool loadIcons = false,
   }) async {
-    final rawBuckets = await _bridge.queryAppBuckets(
+    final rawBucketsFuture = _bridge.queryAppBuckets(
       networkType: networkType,
       subscriberId: subscriberId,
       startTime: startTime,
       endTime: endTime,
     );
 
-    final deviceTotal = await _bridge.queryDeviceSummary(
+    final deviceTotalFuture = _bridge.queryDeviceSummary(
       networkType: networkType,
       subscriberId: subscriberId,
       startTime: startTime,
       endTime: endTime,
     );
+
+    final bucketResults = await Future.wait([rawBucketsFuture, deviceTotalFuture]);
+    final rawBuckets = bucketResults[0] as List<UsageData>;
+    final deviceTotal = bucketResults[1] as UsageData;
 
     // Reconcile unaccounted device delta to UID_OTHER_USERS
     final reconciledDelta = reconcileDeviceDelta(deviceTotal, rawBuckets);
@@ -242,7 +247,7 @@ class NetworkUsageRepository {
     }
 
     final appInfos = await Future.wait(
-      validBuckets.map((b) => getAppInfo(b.uid ?? SpecialUids.uidUnknown)),
+      validBuckets.map((b) => getAppInfo(b.uid ?? SpecialUids.uidUnknown, loadIcon: loadIcons)),
     );
 
     final appUsages = <AppUsage>[];

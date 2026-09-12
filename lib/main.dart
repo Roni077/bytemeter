@@ -27,16 +27,27 @@ class ByteMeterApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch preferences stream so theme or unit changes immediately rebuild UI
-    final prefsAsync = ref.watch(preferencesStreamProvider);
     final prefsRepo = ref.watch(preferencesRepositoryProvider);
-    final currentPrefs = prefsAsync.valueOrNull ?? prefsRepo.current;
+    // Selectively watch only themeMode and onboarding status to avoid full-tree rebuilds
+    // when unrelated preferences (such as speed units, notification styles, or metric bases) update.
+    final themeMode = ref.watch(
+      preferencesStreamProvider.select(
+        (asyncPrefs) => asyncPrefs.valueOrNull?.themeMode ?? prefsRepo.current.themeMode,
+      ),
+    );
+    final hasCompletedOnboarding = ref.watch(
+      preferencesStreamProvider.select(
+        (asyncPrefs) =>
+            asyncPrefs.valueOrNull?.hasCompletedOnboarding ??
+            prefsRepo.current.hasCompletedOnboarding,
+      ),
+    );
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
 
     return DynamicColorBuilder(
       builder: (ColorScheme? dynamicLight, ColorScheme? dynamicDark) {
         final themeData = AppTheme.buildTheme(
-          preference: currentPrefs.themeMode,
+          preference: themeMode,
           platformBrightness: platformBrightness,
           dynamicLight: dynamicLight,
           dynamicDark: dynamicDark,
@@ -46,7 +57,7 @@ class ByteMeterApp extends ConsumerWidget {
           title: 'ByteMeter',
           debugShowCheckedModeBanner: false,
           theme: themeData,
-          home: currentPrefs.hasCompletedOnboarding
+          home: hasCompletedOnboarding
               ? const AppScaffold()
               : const OnboardingScreen(),
         );

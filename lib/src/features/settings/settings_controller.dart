@@ -33,11 +33,18 @@ class SettingsController extends StateNotifier<SettingsState> {
   Future<void> loadInitialState() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final hasPerm = await bridge.hasUsagePermission();
-      final hasNotif = await bridge.hasNotificationPermission();
-      final ignoringBattery = await bridge.isIgnoringBatteryOptimizations();
-      final hasPhone = await bridge.hasPhonePermission();
-      final serviceRunning = await bridge.isServiceRunning();
+      final results = await Future.wait([
+        bridge.hasUsagePermission(),
+        bridge.hasNotificationPermission(),
+        bridge.isIgnoringBatteryOptimizations(),
+        bridge.hasPhonePermission(),
+        bridge.isServiceRunning(),
+      ]);
+      final hasPerm = results[0];
+      final hasNotif = results[1];
+      final ignoringBattery = results[2];
+      final hasPhone = results[3];
+      final serviceRunning = results[4];
 
       state = state.copyWith(
         preferences: prefsRepo.current,
@@ -59,11 +66,18 @@ class SettingsController extends StateNotifier<SettingsState> {
   /// Refreshes permission and service statuses (e.g. on AppLifecycle resumed).
   Future<void> refreshPermissionStatuses() async {
     try {
-      final hasPerm = await bridge.hasUsagePermission();
-      final hasNotif = await bridge.hasNotificationPermission();
-      final ignoringBattery = await bridge.isIgnoringBatteryOptimizations();
-      final hasPhone = await bridge.hasPhonePermission();
-      final serviceRunning = await bridge.isServiceRunning();
+      final results = await Future.wait([
+        bridge.hasUsagePermission(),
+        bridge.hasNotificationPermission(),
+        bridge.isIgnoringBatteryOptimizations(),
+        bridge.hasPhonePermission(),
+        bridge.isServiceRunning(),
+      ]);
+      final hasPerm = results[0];
+      final hasNotif = results[1];
+      final ignoringBattery = results[2];
+      final hasPhone = results[3];
+      final serviceRunning = results[4];
 
       state = state.copyWith(
         hasUsagePermission: hasPerm,
@@ -173,9 +187,14 @@ class SettingsController extends StateNotifier<SettingsState> {
     state = state.copyWith(isDiagnosticRunning: true);
     final stopwatch = Stopwatch()..start();
     try {
-      final hasPerm = await bridge.hasUsagePermission();
-      final serviceRunning = await bridge.isServiceRunning();
-      final ignoringBattery = await bridge.isIgnoringBatteryOptimizations();
+      final results = await Future.wait([
+        bridge.hasUsagePermission(),
+        bridge.isServiceRunning(),
+        bridge.isIgnoringBatteryOptimizations(),
+      ]);
+      final hasPerm = results[0];
+      final serviceRunning = results[1];
+      final ignoringBattery = results[2];
       stopwatch.stop();
       final latency = stopwatch.elapsedMilliseconds;
 

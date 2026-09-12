@@ -36,12 +36,26 @@ class SizeMeasurer {
   }) {
     if (maxWidth <= 0) return minFontSize;
 
-    double low = minFontSize;
-    double high = maxFontSize;
-    double bestFit = minFontSize;
-
     final painter = TextPainter(textDirection: textDirection);
     try {
+      // Fast-path 1: Check if text already fits cleanly at maxFontSize
+      painter.text = TextSpan(text: text, style: baseStyle.copyWith(fontSize: maxFontSize));
+      painter.layout();
+      if (painter.width <= maxWidth) {
+        return maxFontSize;
+      }
+
+      // Fast-path 2: Check if even minFontSize exceeds maxWidth
+      painter.text = TextSpan(text: text, style: baseStyle.copyWith(fontSize: minFontSize));
+      painter.layout();
+      if (painter.width >= maxWidth) {
+        return minFontSize;
+      }
+
+      double low = minFontSize;
+      double high = maxFontSize;
+      double bestFit = minFontSize;
+
       for (int i = 0; i < maxIterations; i++) {
         final mid = (low + high) / 2.0;
         painter.text = TextSpan(text: text, style: baseStyle.copyWith(fontSize: mid));
@@ -56,10 +70,10 @@ class SizeMeasurer {
 
         if ((high - low).abs() < 0.25) break;
       }
+
+      return bestFit;
     } finally {
       painter.dispose();
     }
-
-    return bestFit;
   }
 }

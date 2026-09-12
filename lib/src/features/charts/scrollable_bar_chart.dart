@@ -63,7 +63,7 @@ class ScrollableBarChart extends StatefulWidget {
 
 class _ScrollableBarChartState extends State<ScrollableBarChart> {
   late final ScrollController _scrollController;
-  int _currentCenteredIndex = 0;
+  late final ValueNotifier<int> _centeredIndexNotifier;
   int _lastHapticIndex = -1;
   bool _isSnapping = false;
   Timer? _scrollDebounceTimer;
@@ -73,6 +73,7 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
   @override
   void initState() {
     super.initState();
+    _centeredIndexNotifier = ValueNotifier<int>(0);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
 
@@ -96,6 +97,7 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
     _scrollDebounceTimer?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _centeredIndexNotifier.dispose();
     super.dispose();
   }
 
@@ -125,7 +127,7 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
           d.date.month == date.month &&
           d.date.day == date.day,
     );
-    if (found != -1 && found != _currentCenteredIndex) {
+    if (found != -1 && found != _centeredIndexNotifier.value) {
       _scrollToIndex(found, animate: true);
     }
   }
@@ -134,6 +136,7 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
     if (!_scrollController.hasClients || widget.historyData.isEmpty) return;
 
     final targetOffset = index * _itemExtent;
+    _centeredIndexNotifier.value = index;
     if (animate) {
       _isSnapping = true;
       _scrollController
@@ -164,10 +167,8 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
       AppHaptics.segmentFrequentTick();
     }
 
-    if (centerIndex != _currentCenteredIndex) {
-      setState(() {
-        _currentCenteredIndex = centerIndex;
-      });
+    if (centerIndex != _centeredIndexNotifier.value) {
+      _centeredIndexNotifier.value = centerIndex;
       if (!_isSnapping) {
         _scrollDebounceTimer?.cancel();
         _scrollDebounceTimer = Timer(const Duration(milliseconds: 150), () {
@@ -215,75 +216,79 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final centeredData = (widget.historyData.isNotEmpty &&
-            _currentCenteredIndex < widget.historyData.length)
-        ? widget.historyData[_currentCenteredIndex]
-        : null;
-
-    final centeredTotalBytes = centeredData?.totalBytes ?? 0;
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Floating Center Info Badge Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '90-DAY TIMELINE',
-                          style: AppTypography.chartLabelStyle(
-                            colorScheme.onSurfaceVariant,
-                            fontSize: 11,
-                          ).copyWith(letterSpacing: 1.2),
+            // Floating Center Info Badge Header (Isolated Rebuild)
+            ValueListenableBuilder<int>(
+              valueListenable: _centeredIndexNotifier,
+              builder: (context, centeredIndex, _) {
+                final centeredData = (widget.historyData.isNotEmpty &&
+                        centeredIndex < widget.historyData.length)
+                    ? widget.historyData[centeredIndex]
+                    : null;
+                final centeredTotalBytes = centeredData?.totalBytes ?? 0;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '90-DAY TIMELINE',
+                              style: AppTypography.chartLabelStyle(
+                                colorScheme.onSurfaceVariant,
+                                fontSize: 11,
+                              ).copyWith(letterSpacing: 1.2),
+                            ),
+                            const SizedBox(height: 2),
+                            if (centeredData != null)
+                              Text(
+                                DateFormat('EEEE, MMM d, y').format(centeredData.date),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            else
+                              Text(
+                                'Select Day',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        if (centeredData != null)
-                          Text(
-                            DateFormat('EEEE, MMM d, y').format(centeredData.date),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          )
-                        else
-                          Text(
-                            'Select Day',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      DataSize(centeredTotalBytes).format(),
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w800,
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          DataSize(centeredTotalBytes).format(),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
             const SizedBox(height: 12),
 
@@ -342,28 +347,32 @@ class _ScrollableBarChartState extends State<ScrollableBarChart> {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final data = widget.historyData[index];
-                                    final isCentered = index == _currentCenteredIndex;
-
-                                    return RepaintBoundary(
-                                      child: GestureDetector(
-                                        onTap: () => _scrollToIndex(index, animate: true),
-                                        child: Container(
-                                          width: widget.barWidth,
-                                          margin: EdgeInsets.only(
-                                            right: index == widget.historyData.length - 1
-                                                ? 0
-                                                : widget.barSpacing,
+                                    return ValueListenableBuilder<int>(
+                                      valueListenable: _centeredIndexNotifier,
+                                      builder: (context, centeredIndex, _) {
+                                        final isCentered = index == centeredIndex;
+                                        return RepaintBoundary(
+                                          child: GestureDetector(
+                                            onTap: () => _scrollToIndex(index, animate: true),
+                                            child: Container(
+                                              width: widget.barWidth,
+                                              margin: EdgeInsets.only(
+                                                right: index == widget.historyData.length - 1
+                                                    ? 0
+                                                    : widget.barSpacing,
+                                              ),
+                                              child: _HistoryBarItem(
+                                                data: data,
+                                                maxBytes: maxVisibleBytes,
+                                                isCentered: isCentered,
+                                                barWidth: widget.barWidth,
+                                                availableBarHeight: constraints.maxHeight - 26.0,
+                                                colorScheme: colorScheme,
+                                              ),
+                                            ),
                                           ),
-                                          child: _HistoryBarItem(
-                                            data: data,
-                                            maxBytes: maxVisibleBytes,
-                                            isCentered: isCentered,
-                                            barWidth: widget.barWidth,
-                                            availableBarHeight: constraints.maxHeight - 26.0,
-                                            colorScheme: colorScheme,
-                                          ),
-                                        ),
-                                      ),
+                                        );
+                                      },
                                     );
                                   },
                                   childCount: widget.historyData.length,

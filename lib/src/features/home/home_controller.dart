@@ -148,7 +148,9 @@ class HomeController extends StateNotifier<HomeState> {
     int fullDaySum = 0;
     int elapsedDaySum = 0;
 
-    for (int i = 1; i <= 4; i++) {
+    // Concurrently query all 4 historical weeks in parallel to eliminate sequential IPC delays
+    final weekFutures = List.generate(4, (index) {
+      final i = index + 1;
       final pastDate = now.subtract(Duration(days: i * 7));
       final pastStart = AppDateUtils.startOfDay(pastDate);
       final pastEnd = AppDateUtils.endOfDay(pastDate);
@@ -161,22 +163,26 @@ class HomeController extends StateNotifier<HomeState> {
         now.second,
       );
 
-      final fullDay = await usageRepo.getPeriodUsage(
-        startTime: pastStart,
-        endTime: pastEnd,
-        networkType: networkType,
-        subscriberId: subscriberId,
-      );
+      return Future.wait([
+        usageRepo.getPeriodUsage(
+          startTime: pastStart,
+          endTime: pastEnd,
+          networkType: networkType,
+          subscriberId: subscriberId,
+        ),
+        usageRepo.getPeriodUsage(
+          startTime: pastStart,
+          endTime: pastElapsed,
+          networkType: networkType,
+          subscriberId: subscriberId,
+        ),
+      ]);
+    });
 
-      final elapsedDay = await usageRepo.getPeriodUsage(
-        startTime: pastStart,
-        endTime: pastElapsed,
-        networkType: networkType,
-        subscriberId: subscriberId,
-      );
-
-      fullDaySum += fullDay.totalBytes;
-      elapsedDaySum += elapsedDay.totalBytes;
+    final weekResults = await Future.wait(weekFutures);
+    for (final pair in weekResults) {
+      fullDaySum += pair[0].totalBytes;
+      elapsedDaySum += pair[1].totalBytes;
     }
 
     if (elapsedDaySum > 0 && fullDaySum >= elapsedDaySum) {
@@ -207,19 +213,24 @@ class HomeController extends StateNotifier<HomeState> {
     required NetworkType networkType,
     String? subscriberId,
   }) async {
-    final last24h = await usageRepo.getPeriodUsage(
-      startTime: now.subtract(const Duration(hours: 24)),
-      endTime: now,
-      networkType: networkType,
-      subscriberId: subscriberId,
-    );
+    // Run last24h and prior6Days queries in parallel
+    final usages = await Future.wait([
+      usageRepo.getPeriodUsage(
+        startTime: now.subtract(const Duration(hours: 24)),
+        endTime: now,
+        networkType: networkType,
+        subscriberId: subscriberId,
+      ),
+      usageRepo.getPeriodUsage(
+        startTime: now.subtract(const Duration(hours: 24 * 7)),
+        endTime: now.subtract(const Duration(hours: 24)),
+        networkType: networkType,
+        subscriberId: subscriberId,
+      ),
+    ]);
 
-    final prior6Days = await usageRepo.getPeriodUsage(
-      startTime: now.subtract(const Duration(hours: 24 * 7)),
-      endTime: now.subtract(const Duration(hours: 24)),
-      networkType: networkType,
-      subscriberId: subscriberId,
-    );
+    final last24h = usages[0];
+    final prior6Days = usages[1];
 
     final double hourlyAvgLast24h = last24h.totalBytes / 24.0;
     final double hourlyAvgPrior6Days = prior6Days.totalBytes / 144.0; // 6 days * 24h = 144h
@@ -279,15 +290,20 @@ class HomeController extends StateNotifier<HomeState> {
       networkType: networkType,
     );
 
-    return breakdown.take(5).map((app) {
-      return AppUsageBarData(
-        uid: app.appInfo.uid,
-        appName: app.appInfo.label,
-        packageName: app.appInfo.packageName,
-        bytes: app.totalBytes,
-        iconBytes: app.appInfo.iconBytes,
-      );
-    }).toList(growable: false);
+    final top5 = breakdown.take(5).toList();
+    // Resolve icons only for the 5 top apps rendered on the dashboard
+    return Future.wait(
+      top5.map((app) async {
+        final infoWithIcon = await usageRepo.getAppInfo(app.appInfo.uid, loadIcon: true);
+        return AppUsageBarData(
+          uid: infoWithIcon.uid,
+          appName: infoWithIcon.label,
+          packageName: infoWithIcon.packageName,
+          bytes: app.totalBytes,
+          iconBytes: infoWithIcon.iconBytes,
+        );
+      }),
+    );
   }
 }
 
