@@ -5,7 +5,7 @@ import '../../data/models/enums.dart';
 class OnboardingState {
   const OnboardingState({
     this.currentPage = 0,
-    this.totalPages = 4,
+    this.totalPages = 7,
     this.hasUsagePermission = false,
     this.hasNotificationPermission = false,
     this.isIgnoringBatteryOptimizations = false,

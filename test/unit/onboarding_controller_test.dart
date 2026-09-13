@@ -106,7 +106,7 @@ void main() {
       await controller.refreshPermissionStatuses();
 
       expect(controller.state.currentPage, equals(0));
-      expect(controller.state.totalPages, equals(4));
+      expect(controller.state.totalPages, equals(7));
       expect(controller.state.hasUsagePermission, isFalse);
       expect(controller.state.hasNotificationPermission, isFalse);
       expect(controller.state.isIgnoringBatteryOptimizations, isFalse);

@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bytemeter/src/core/native/native_traffic_bridge.dart';
 import 'package:bytemeter/src/core/providers/core_providers.dart';
 import 'package:bytemeter/src/features/onboarding/onboarding_screen.dart';
-import 'package:bytemeter/src/features/onboarding/widgets/permission_card.dart';
 
 class MockOnboardingBridge extends NativeTrafficBridge {
   bool usageGranted = false;
@@ -98,24 +97,67 @@ void main() {
       expect(find.text('Skip'), findsOneWidget);
     });
 
-    testWidgets('Advances through wizard steps via Continue button', (tester) async {
+    testWidgets('Advances through wizard steps via Continue button across dedicated permission screens', (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // Tap Get Started -> Step 2: Permissions
+      // Step 0: Welcome -> Tap Get Started -> Step 1: Usage Access
       await tester.tap(find.text('Get Started'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Required Permissions'), findsOneWidget);
-      expect(find.byType(PermissionCard), findsNWidgets(4));
-      expect(find.text('Usage Access (Essential)'), findsOneWidget);
+      expect(find.text('Network Usage Access'), findsOneWidget);
+      expect(find.text('Grant Usage Access'), findsOneWidget);
 
       // Tap Grant Access on Usage Access
-      final grantButton = find.widgetWithText(FilledButton, 'Grant Access').first;
-      await tester.tap(grantButton);
+      final grantUsageButton = find.widgetWithText(FilledButton, 'Grant Usage Access');
+      await tester.ensureVisible(grantUsageButton);
+      await tester.tap(grantUsageButton);
+      await tester.pumpAndSettle();
+      expect(bridge.usageGranted, isTrue);
+
+      // Step 1 -> Tap Continue -> Step 2: Notifications
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
-      // Tap Continue -> Step 3: Quick Preferences
+      expect(find.text('Live Speed Notification'), findsOneWidget);
+      expect(find.text('Allow Notifications'), findsOneWidget);
+
+      // Tap Allow Notifications
+      final allowNotifButton = find.widgetWithText(FilledButton, 'Allow Notifications');
+      await tester.ensureVisible(allowNotifButton);
+      await tester.tap(allowNotifButton);
+      await tester.pumpAndSettle();
+      expect(bridge.notifGranted, isTrue);
+
+      // Step 2 -> Tap Continue -> Step 3: Battery Optimization
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Uninterrupted Speed Meter'), findsOneWidget);
+      expect(find.text('Disable Restrictions'), findsOneWidget);
+
+      // Tap Disable Restrictions
+      final exemptButton = find.widgetWithText(FilledButton, 'Disable Restrictions');
+      await tester.ensureVisible(exemptButton);
+      await tester.tap(exemptButton);
+      await tester.pumpAndSettle();
+      expect(bridge.batteryIgnored, isTrue);
+
+      // Step 3 -> Tap Continue -> Step 4: Phone State (Multi-SIM)
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Multi-SIM Quota Tracking'), findsOneWidget);
+      expect(find.text('Enable Multi-SIM Tracking'), findsOneWidget);
+
+      // Tap Enable Multi-SIM Tracking
+      final simButton = find.widgetWithText(FilledButton, 'Enable Multi-SIM Tracking');
+      await tester.ensureVisible(simButton);
+      await tester.tap(simButton);
+      await tester.pumpAndSettle();
+      expect(bridge.phoneGranted, isTrue);
+
+      // Step 4 -> Tap Continue -> Step 5: Quick Preferences
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
@@ -124,12 +166,44 @@ void main() {
       expect(find.text('METRIC UNIT BASE'), findsOneWidget);
       expect(find.text('Persistent Speed Meter'), findsOneWidget);
 
-      // Tap Continue -> Step 4: Ready
+      // Step 5 -> Tap Continue -> Step 6: Ready
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       expect(find.text('You\'re Ready to Go!'), findsOneWidget);
       expect(find.text('Start Using ByteMeter'), findsOneWidget);
+    });
+
+    testWidgets('In-page skip allows advancing past optional steps', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Go to Step 1 (Usage)
+      await tester.tap(find.text('Get Started'));
+      await tester.pumpAndSettle();
+
+      // Go to Step 2 (Notification)
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      // Go to Step 3 (Battery Optimization)
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Uninterrupted Speed Meter'), findsOneWidget);
+
+      // Tap "Keep Default Restrictions" -> advances to Step 4 (Phone State)
+      final keepDefaultBtn = find.text('Keep Default Restrictions');
+      await tester.ensureVisible(keepDefaultBtn);
+      await tester.tap(keepDefaultBtn);
+      await tester.pumpAndSettle();
+      expect(find.text('Multi-SIM Quota Tracking'), findsOneWidget);
+
+      // Tap "Skip (Single SIM / Wi-Fi Only)" -> advances to Step 5 (Quick Preferences)
+      final skipSimBtn = find.text('Skip (Single SIM / Wi-Fi Only)');
+      await tester.ensureVisible(skipSimBtn);
+      await tester.tap(skipSimBtn);
+      await tester.pumpAndSettle();
+      expect(find.text('Quick Preferences'), findsOneWidget);
     });
 
     testWidgets('Skip button navigates directly to final launch step', (tester) async {

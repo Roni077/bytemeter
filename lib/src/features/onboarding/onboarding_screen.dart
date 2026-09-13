@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_scaffold.dart';
 import '../../core/utils/haptics.dart';
 import 'onboarding_controller.dart';
+import 'widgets/battery_optimization_step_view.dart';
+import 'widgets/notification_permission_step_view.dart';
 import 'widgets/onboarding_page_indicator.dart';
-import 'widgets/permissions_step_view.dart';
+import 'widgets/phone_permission_step_view.dart';
 import 'widgets/ready_step_view.dart';
 import 'widgets/setup_step_view.dart';
+import 'widgets/usage_permission_step_view.dart';
 import 'widgets/welcome_step_view.dart';
 
 /// Full-screen interactive wizard guiding first-time users through value propositions,
@@ -122,9 +125,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 },
                 children: [
                   const WelcomeStepView(),
-                  PermissionsStepView(
+                  UsagePermissionStepView(
                     state: state,
                     controller: controller,
+                  ),
+                  NotificationPermissionStepView(
+                    state: state,
+                    controller: controller,
+                  ),
+                  BatteryOptimizationStepView(
+                    state: state,
+                    controller: controller,
+                    onSkip: () => _goToPage(state.currentPage + 1),
+                  ),
+                  PhonePermissionStepView(
+                    state: state,
+                    controller: controller,
+                    onSkip: () => _goToPage(state.currentPage + 1),
                   ),
                   SetupStepView(
                     state: state,
