@@ -43,63 +43,87 @@ class NotificationSettingsScreen extends ConsumerWidget {
         ),
         children: [
           // 1. Service Status Live Banner
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: state.isServiceRunning
-                  ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: state.isServiceRunning
-                    ? colorScheme.primary.withValues(alpha: 0.3)
-                    : colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
+              onTap: (!state.isServiceRunning && prefs.persistentNotificationEnabled)
+                  ? () {
+                      AppHaptics.selectionTick();
+                      controller.setPersistentNotificationEnabled(true);
+                    }
+                  : null,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: state.isServiceRunning
+                      ? colorScheme.primaryContainer.withValues(alpha: 0.5)
+                      : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
                     color: state.isServiceRunning
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    state.isServiceRunning ? Icons.bolt_rounded : Icons.pause_rounded,
-                    color: state.isServiceRunning
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                    size: 20,
+                        ? colorScheme.primary.withValues(alpha: 0.3)
+                        : colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        state.isServiceRunning
-                            ? 'Foreground Service Active'
-                            : 'Service Stopped',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: state.isServiceRunning
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        state.isServiceRunning
-                            ? 'Sub-second bandwidth polling enabled with dynamic status bar icon.'
-                            : 'Enable the master switch below to start real-time monitoring.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      child: Icon(
+                        state.isServiceRunning ? Icons.bolt_rounded : Icons.pause_rounded,
+                        color: state.isServiceRunning
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            state.isServiceRunning
+                                ? 'Foreground Service Active'
+                                : (prefs.persistentNotificationEnabled
+                                    ? 'Service Inactive (Tap to Start)'
+                                    : 'Service Stopped'),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            state.isServiceRunning
+                                ? 'Sub-second bandwidth polling enabled with dynamic status bar icon.'
+                                : (prefs.persistentNotificationEnabled
+                                    ? 'Notifications enabled. Tap here to start foreground speed meter.'
+                                    : 'Enable the master switch below to start real-time monitoring.'),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!state.isServiceRunning && prefs.persistentNotificationEnabled) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.play_circle_fill_rounded,
+                        color: colorScheme.primary,
+                        size: 28,
                       ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
 

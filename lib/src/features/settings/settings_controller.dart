@@ -91,6 +91,15 @@ class SettingsController extends StateNotifier<SettingsState> {
     }
   }
 
+  /// Ensures foreground speed meter service is active if authorized and enabled.
+  Future<void> ensureServiceRunningIfAllowed() async {
+    await prefsRepo.ensureServiceRunningIfAllowed();
+    final running = await bridge.isServiceRunning();
+    if (running != state.isServiceRunning) {
+      state = state.copyWith(isServiceRunning: running);
+    }
+  }
+
   /// Updates speed unit format (Bits vs Bytes).
   Future<void> setSpeedUnitType(SpeedUnitType type) async {
     await prefsRepo.setSpeedUnitType(type);

@@ -217,6 +217,39 @@ void main() {
       expect(controller.state.enableBlur, isTrue);
       expect(prefsRepo.current.speedUnitType, equals(SpeedUnitType.bytes));
     });
+
+    test('ensureServiceRunningIfAllowed boots foreground service when authorized and enabled', () async {
+      bridge.hasPermission = true;
+      bridge.serviceRunning = false;
+
+      final controller = SettingsController(prefsRepo: prefsRepo, bridge: bridge);
+      expect(controller.state.isServiceRunning, isFalse);
+
+      await controller.ensureServiceRunningIfAllowed();
+
+      expect(bridge.serviceRunning, isTrue);
+      expect(controller.state.isServiceRunning, isTrue);
+    });
+
+    test('ensureServiceRunningIfAllowed respects missing permission or disabled setting', () async {
+      // 1. Missing permission
+      bridge.hasPermission = false;
+      bridge.serviceRunning = false;
+
+      final controller = SettingsController(prefsRepo: prefsRepo, bridge: bridge);
+      await controller.ensureServiceRunningIfAllowed();
+      expect(bridge.serviceRunning, isFalse);
+      expect(controller.state.isServiceRunning, isFalse);
+
+      // 2. Disabled setting
+      bridge.hasPermission = true;
+      await controller.setPersistentNotificationEnabled(false);
+      expect(bridge.serviceRunning, isFalse);
+
+      await controller.ensureServiceRunningIfAllowed();
+      expect(bridge.serviceRunning, isFalse);
+      expect(controller.state.isServiceRunning, isFalse);
+    });
   });
 }
 

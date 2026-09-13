@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/providers/core_providers.dart';
 import 'core/utils/haptics.dart';
 import 'features/data_plans/data_plans_screen.dart';
 import 'features/history/history_screen.dart';
@@ -9,7 +11,7 @@ import 'features/settings/settings_screen.dart';
 /// Root navigation container providing seamless floating bottom navigation between
 /// Home, History, Data Plans, and Settings screens with frosted glass aesthetics,
 /// fluid tab indicators, and active-tab scroll-to-top support.
-class AppScaffold extends StatefulWidget {
+class AppScaffold extends ConsumerStatefulWidget {
   const AppScaffold({
     super.key,
     this.initialIndex = 0,
@@ -18,10 +20,11 @@ class AppScaffold extends StatefulWidget {
   final int initialIndex;
 
   @override
-  State<AppScaffold> createState() => _AppScaffoldState();
+  ConsumerState<AppScaffold> createState() => _AppScaffoldState();
 }
 
-class _AppScaffoldState extends State<AppScaffold> {
+class _AppScaffoldState extends ConsumerState<AppScaffold>
+    with WidgetsBindingObserver {
   late int _currentIndex;
   late final Set<int> _visitedIndices;
   late final ScrollController _homeScrollController;
@@ -32,16 +35,31 @@ class _AppScaffoldState extends State<AppScaffold> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentIndex = widget.initialIndex;
     _visitedIndices = {_currentIndex};
     _homeScrollController = ScrollController();
     _historyScrollController = ScrollController();
     _plansScrollController = ScrollController();
     _settingsScrollController = ScrollController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(preferencesRepositoryProvider).ensureServiceRunningIfAllowed();
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      ref.read(preferencesRepositoryProvider).ensureServiceRunningIfAllowed();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _homeScrollController.dispose();
     _historyScrollController.dispose();
     _plansScrollController.dispose();

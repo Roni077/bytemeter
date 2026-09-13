@@ -92,8 +92,18 @@ class ByteMeterForegroundService : Service() {
         isMetric1000 = prefs.getBoolean("flutter.metric_base_1000", false)
         inBits = prefs.getBoolean("flutter.speed_unit_bits", false)
         aodMode = prefs.getBoolean("flutter.aod_mode_enabled", false)
-        val thresholdInt = prefs.getInt("flutter.silent_speed_threshold_kb", -1)
-        speedThresholdKb = if (thresholdInt != -1) thresholdInt.toLong() else -1L
+        val thresholdVal: Long = try {
+            prefs.getLong("flutter.silent_speed_threshold_kb", -1L)
+        } catch (_: ClassCastException) {
+            try {
+                prefs.getInt("flutter.silent_speed_threshold_kb", -1).toLong()
+            } catch (_: Exception) {
+                -1L
+            }
+        } catch (_: Exception) {
+            -1L
+        }
+        speedThresholdKb = thresholdVal
 
         createNotificationChannels()
 
@@ -116,7 +126,7 @@ class ByteMeterForegroundService : Service() {
         )
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(
                     NOTIFICATION_ID,
                     initialNotification,
@@ -305,12 +315,17 @@ class ByteMeterForegroundService : Service() {
         val isSilent = speedThresholdKb > 0 && currentTotalKb < speedThresholdKb
         silentChannelActive = isSilent
 
-        val smallIcon = if (separateUpDown) {
-            val upPart = formatRateCompact(if (inBits) delta.up * 8 else delta.up, inBits, divisor)
-            val downPart = formatRateCompact(if (inBits) delta.down * 8 else delta.down, inBits, divisor)
-            notificationIconHelper.createIconSeparate(upPart, downPart)
-        } else {
-            notificationIconHelper.createIcon(speedNum, speedUnit)
+        val smallIcon = try {
+            if (separateUpDown) {
+                val upPart = formatRateCompact(if (inBits) delta.up * 8 else delta.up, inBits, divisor)
+                val downPart = formatRateCompact(if (inBits) delta.down * 8 else delta.down, inBits, divisor)
+                notificationIconHelper.createIconSeparate(upPart, downPart)
+            } else {
+                notificationIconHelper.createIcon(speedNum, speedUnit)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error rendering dynamic notification icon, falling back to static icon", e)
+            androidx.core.graphics.drawable.IconCompat.createWithResource(this, R.drawable.notification)
         }
 
         if (title == lastTitle && content == lastContent && smallIcon == lastIcon && isSilent == lastIsSilent &&
@@ -359,7 +374,11 @@ class ByteMeterForegroundService : Service() {
             .setPriority(if (isSilent) NotificationCompat.PRIORITY_MIN else NotificationCompat.PRIORITY_LOW)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        try {
+            notificationManager.notify(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error posting updated notification", e)
+        }
     }
 
     private fun buildNotification(

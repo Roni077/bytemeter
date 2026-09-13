@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/core_providers.dart';
@@ -54,6 +55,9 @@ class HomeController extends StateNotifier<HomeState> {
       final hasPerm = await hasPermFuture;
       if (hasPerm != state.hasUsagePermission) {
         state = state.copyWith(hasUsagePermission: hasPerm);
+      }
+      if (hasPerm) {
+        unawaited(prefsRepo.ensureServiceRunningIfAllowed());
       }
       final todayUsage = await todayUsageFuture;
 

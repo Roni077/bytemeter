@@ -177,6 +177,23 @@ class PreferencesRepository {
     _emitUpdate(_currentPreferences.copyWith(persistentNotificationEnabled: enable));
   }
 
+  /// Ensures the persistent speed monitoring foreground service is running
+  /// if authorized and enabled in user preferences.
+  Future<bool> ensureServiceRunningIfAllowed() async {
+    final bridge = _bridge;
+    if (bridge == null) return false;
+    if (!_currentPreferences.persistentNotificationEnabled) return false;
+
+    final hasUsage = await bridge.hasUsagePermission();
+    if (!hasUsage) return false;
+
+    final isRunning = await bridge.isServiceRunning();
+    if (!isRunning) {
+      return await bridge.startForegroundService();
+    }
+    return true;
+  }
+
   /// Sets the status bar speed notification icon format.
   Future<void> setNotificationIconStyle(NotificationIconStyle style) async {
     await _prefs.setString(AppConstants.prefNotificationIconStyle, style.name);
