@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/notification_root_collapsed"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:orientation="horizontal"
+    android:weightSum="4"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:baselineAligned="false">
+
+    <!-- Down Speed -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_notif_down"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="Down" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Down"
+                android:textColor="#9AA0A6"
+                android:textSize="9sp" />
+            <TextView
+                android:id="@+id/tv_down_speed_collapsed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 KB/s"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Up Speed -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_notif_up"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="Up" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Up"
+                android:textColor="#9AA0A6"
+                android:textSize="9sp" />
+            <TextView
+                android:id="@+id/tv_up_speed_collapsed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 B/s"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Mobile Today -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_notif_mobile"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="Mobile" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mobile"
+                android:textColor="#9AA0A6"
+                android:textSize="9sp" />
+            <TextView
+                android:id="@+id/tv_mobile_usage_collapsed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 MB"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- WiFi Today -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_notif_wifi"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="WiFi" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="WiFi"
+                android:textColor="#9AA0A6"
+                android:textSize="9sp" />
+            <TextView
+                android:id="@+id/tv_wifi_usage_collapsed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 MB"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

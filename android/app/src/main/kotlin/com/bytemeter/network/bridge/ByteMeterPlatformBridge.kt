@@ -37,13 +37,21 @@ class ByteMeterPlatformBridge(
     private val networkStatsHelper = NetworkStatsHelper(context)
     private val appListHelper = AppListHelper(context)
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var methodChannel: MethodChannel? = null
 
     fun register(messenger: BinaryMessenger) {
-        val methodChannel = MethodChannel(messenger, ChannelConstants.METHOD_CHANNEL_NAME)
-        methodChannel.setMethodCallHandler(this)
+        val channel = MethodChannel(messenger, ChannelConstants.METHOD_CHANNEL_NAME)
+        channel.setMethodCallHandler(this)
+        methodChannel = channel
 
         val eventChannel = EventChannel(messenger, ChannelConstants.EVENT_CHANNEL_NAME)
         eventChannel.setStreamHandler(this)
+    }
+
+    fun notifyOpenNotificationSettings() {
+        mainHandler.post {
+            methodChannel?.invokeMethod("openNotificationSettings", null)
+        }
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {

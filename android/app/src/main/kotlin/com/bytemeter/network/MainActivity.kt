@@ -17,6 +17,18 @@ class MainActivity : FlutterActivity() {
         platformBridge = ByteMeterPlatformBridge(applicationContext, activityScope).apply {
             register(flutterEngine.dartExecutor.binaryMessenger)
         }
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: android.content.Intent?) {
+        if (intent?.getBooleanExtra(com.bytemeter.network.services.ByteMeterForegroundService.EXTRA_OPEN_NOTIFICATION_SETTINGS, false) == true) {
+            platformBridge?.notifyOpenNotificationSettings()
+        }
     }
 
     override fun onDestroy() {

@@ -131,6 +131,14 @@ void main() {
       await tester.pumpWidget(createTestWidget(child: const NotificationSettingsScreen()));
       await tester.pumpAndSettle();
 
+      // Verify Notification Shade Panel preview
+      expect(find.text('Notification Shade Panel'), findsOneWidget);
+      expect(find.text('Internet Speed Meter'), findsOneWidget);
+      expect(find.text('Down'), findsOneWidget);
+      expect(find.text('Up'), findsOneWidget);
+      expect(find.text('Mobile'), findsOneWidget);
+      expect(find.text('WiFi'), findsOneWidget);
+
       // Tap Separate Up/Down
       final separateBtn = find.text('Separate Up/Down');
       expect(separateBtn, findsOneWidget);

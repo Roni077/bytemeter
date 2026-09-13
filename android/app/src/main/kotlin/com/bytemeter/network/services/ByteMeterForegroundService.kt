@@ -13,11 +13,13 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.bytemeter.network.MainActivity
 import com.bytemeter.network.R
 import com.bytemeter.network.bridge.ByteMeterPlatformBridge
+import com.bytemeter.network.stats.NetworkStatsHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,6 +27,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.Locale
 
 class ByteMeterForegroundService : Service() {
@@ -34,6 +37,7 @@ class ByteMeterForegroundService : Service() {
     private lateinit var notificationManager: NotificationManager
     private lateinit var trafficSnapshotManager: TrafficSnapshotManager
     private lateinit var notificationIconHelper: NotificationIconHelper
+    private lateinit var networkStatsHelper: NetworkStatsHelper
 
     private var inBits: Boolean = false
     private var separateUpDown: Boolean = false
@@ -43,10 +47,19 @@ class ByteMeterForegroundService : Service() {
     private var silentChannelActive: Boolean = false
 
     private lateinit var openAppPendingIntent: PendingIntent
+    private lateinit var openSettingsPendingIntent: PendingIntent
+    private var todayMobileBytes: Long = 0L
+    private var todayWifiBytes: Long = 0L
+    private var usageTickCounter: Int = DATA_UPDATE_FREQ
+
     private var lastTitle: String? = null
     private var lastContent: String? = null
     private var lastIcon: androidx.core.graphics.drawable.IconCompat? = null
     private var lastIsSilent: Boolean? = null
+    private var lastDownStr: String? = null
+    private var lastUpStr: String? = null
+    private var lastMobileStr: String? = null
+    private var lastWifiStr: String? = null
 
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -71,7 +84,9 @@ class ByteMeterForegroundService : Service() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         trafficSnapshotManager = TrafficSnapshotManager(applicationContext)
         notificationIconHelper = NotificationIconHelper(applicationContext)
+        networkStatsHelper = NetworkStatsHelper(applicationContext)
         openAppPendingIntent = createOpenAppPendingIntent()
+        openSettingsPendingIntent = createOpenSettingsPendingIntent()
 
         val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
         isMetric1000 = prefs.getBoolean("flutter.metric_base_1000", false)
@@ -188,12 +203,80 @@ class ByteMeterForegroundService : Service() {
                 val delta = currentSnapshot - lastSnapshot
                 lastSnapshot = currentSnapshot
 
+                if (usageTickCounter >= DATA_UPDATE_FREQ) {
+                    updateTodayUsage()
+                    usageTickCounter = 0
+                } else {
+                    usageTickCounter++
+                }
+
                 ByteMeterPlatformBridge.emitSpeedSnapshot(delta)
 
                 launch(Dispatchers.Main) {
                     updateNotificationWithDelta(delta)
                 }
             }
+        }
+    }
+
+    private fun getStartOfDayMillis(): Long {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        return cal.timeInMillis
+    }
+
+    private suspend fun updateTodayUsage() {
+        try {
+            val start = getStartOfDayMillis()
+            val end = System.currentTimeMillis()
+            val mobileSummary = networkStatsHelper.queryDeviceSummary(
+                networkType = android.net.ConnectivityManager.TYPE_MOBILE,
+                subscriberId = null,
+                startTime = start,
+                endTime = end
+            )
+            val wifiSummary = networkStatsHelper.queryDeviceSummary(
+                networkType = android.net.ConnectivityManager.TYPE_WIFI,
+                subscriberId = null,
+                startTime = start,
+                endTime = end
+            )
+            todayMobileBytes = mobileSummary["total"] ?: 0L
+            todayWifiBytes = wifiSummary["total"] ?: 0L
+        } catch (e: Exception) {
+            Log.e(TAG, "Error querying today network usage for notification", e)
+        }
+    }
+
+    private fun formatDataSize(bytes: Long, isMetric: Boolean): String {
+        val divisor = if (isMetric) 1000.0 else 1024.0
+        val k = divisor
+        val m = k * divisor
+        val g = m * divisor
+        val t = g * divisor
+
+        val value = bytes.toDouble()
+        return when {
+            value >= t -> String.format(Locale.US, "%.1f TB", value / t)
+            value >= g -> String.format(Locale.US, "%.1f GB", value / g)
+            value >= m -> {
+                if (value >= 100 * m) {
+                    String.format(Locale.US, "%.0f MB", value / m)
+                } else {
+                    String.format(Locale.US, "%.1f MB", value / m)
+                }
+            }
+            value >= k -> {
+                if (value >= 100 * k) {
+                    String.format(Locale.US, "%.0f KB", value / k)
+                } else {
+                    String.format(Locale.US, "%.1f KB", value / k)
+                }
+            }
+            else -> "$bytes B"
         }
     }
 
@@ -210,7 +293,12 @@ class ByteMeterForegroundService : Service() {
         val speedNum = formattedSpeed.first
         val speedUnit = formattedSpeed.second
 
-        val title = "▲ $speedUpFormatted  ▼ $speedDownFormatted"
+        val downStr = "${speedDownFormatted.first} ${speedDownFormatted.second}"
+        val upStr = "${speedUpFormatted.first} ${speedUpFormatted.second}"
+        val mobileStr = formatDataSize(todayMobileBytes, isMetric1000)
+        val wifiStr = formatDataSize(todayWifiBytes, isMetric1000)
+
+        val title = "▲ $upStr  ▼ $downStr"
         val content = "Active: ${if (delta.interfaces.isEmpty()) "None" else delta.interfaces.joinToString(", ")}"
 
         val currentTotalKb = totalBytes / 1024
@@ -225,19 +313,42 @@ class ByteMeterForegroundService : Service() {
             notificationIconHelper.createIcon(speedNum, speedUnit)
         }
 
-        if (title == lastTitle && content == lastContent && smallIcon == lastIcon && isSilent == lastIsSilent) {
+        if (title == lastTitle && content == lastContent && smallIcon == lastIcon && isSilent == lastIsSilent &&
+            downStr == lastDownStr && upStr == lastUpStr && mobileStr == lastMobileStr && wifiStr == lastWifiStr) {
             return
         }
         lastTitle = title
         lastContent = content
         lastIcon = smallIcon
         lastIsSilent = isSilent
+        lastDownStr = downStr
+        lastUpStr = upStr
+        lastMobileStr = mobileStr
+        lastWifiStr = wifiStr
+
+        val expandedViews = RemoteViews(packageName, R.layout.notification_speed_expanded).apply {
+            setTextViewText(R.id.tv_down_speed, downStr)
+            setTextViewText(R.id.tv_up_speed, upStr)
+            setTextViewText(R.id.tv_mobile_usage, mobileStr)
+            setTextViewText(R.id.tv_wifi_usage, wifiStr)
+            setOnClickPendingIntent(R.id.btn_notification_settings, openSettingsPendingIntent)
+        }
+
+        val collapsedViews = RemoteViews(packageName, R.layout.notification_speed_collapsed).apply {
+            setTextViewText(R.id.tv_down_speed_collapsed, downStr)
+            setTextViewText(R.id.tv_up_speed_collapsed, upStr)
+            setTextViewText(R.id.tv_mobile_usage_collapsed, mobileStr)
+            setTextViewText(R.id.tv_wifi_usage_collapsed, wifiStr)
+        }
 
         val notification = NotificationCompat.Builder(
             this,
             if (isSilent) CHANNEL_ID_SILENT else CHANNEL_ID_DEFAULT
         )
             .setSmallIcon(smallIcon)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(collapsedViews)
+            .setCustomBigContentView(expandedViews)
             .setContentTitle(title)
             .setContentText(content)
             .setOngoing(true)
@@ -257,8 +368,27 @@ class ByteMeterForegroundService : Service() {
         title: String,
         content: String
     ): Notification {
+        val initialSpeed = "$speedText $unitText"
+        val expandedViews = RemoteViews(packageName, R.layout.notification_speed_expanded).apply {
+            setTextViewText(R.id.tv_down_speed, initialSpeed)
+            setTextViewText(R.id.tv_up_speed, initialSpeed)
+            setTextViewText(R.id.tv_mobile_usage, "0 MB")
+            setTextViewText(R.id.tv_wifi_usage, "0 MB")
+            setOnClickPendingIntent(R.id.btn_notification_settings, openSettingsPendingIntent)
+        }
+
+        val collapsedViews = RemoteViews(packageName, R.layout.notification_speed_collapsed).apply {
+            setTextViewText(R.id.tv_down_speed_collapsed, initialSpeed)
+            setTextViewText(R.id.tv_up_speed_collapsed, initialSpeed)
+            setTextViewText(R.id.tv_mobile_usage_collapsed, "0 MB")
+            setTextViewText(R.id.tv_wifi_usage_collapsed, "0 MB")
+        }
+
         return NotificationCompat.Builder(this, CHANNEL_ID_DEFAULT)
             .setSmallIcon(R.drawable.notification)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(collapsedViews)
+            .setCustomBigContentView(expandedViews)
             .setContentTitle(title)
             .setContentText(content)
             .setOngoing(true)
@@ -280,6 +410,19 @@ class ByteMeterForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT
         }
         return PendingIntent.getActivity(this, 0, launchIntent, flags)
+    }
+
+    private fun createOpenSettingsPendingIntent(): PendingIntent {
+        val launchIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_NOTIFICATION_SETTINGS, true)
+        }
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        return PendingIntent.getActivity(this, 1, launchIntent, flags)
     }
 
     private fun createNotificationChannels() {
@@ -350,7 +493,9 @@ class ByteMeterForegroundService : Service() {
         const val NOTIFICATION_ID = 1001
         const val CHANNEL_ID_DEFAULT = "bytemeter_speed_channel"
         const val CHANNEL_ID_SILENT = "bytemeter_speed_channel_silent"
+        private const val DATA_UPDATE_FREQ = 4
 
+        const val EXTRA_OPEN_NOTIFICATION_SETTINGS = "extra_open_notification_settings"
         const val EXTRA_IN_BITS = "extra_in_bits"
         const val EXTRA_SEPARATE_UP_DOWN = "extra_separate_up_down"
         const val EXTRA_METRIC_1000 = "extra_metric_1000"

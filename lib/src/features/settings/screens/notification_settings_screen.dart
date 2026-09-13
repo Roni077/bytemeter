@@ -105,7 +105,22 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          // 2. Master Persistent Notification Switch
+          // 2. Notification Shade Preview
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(
+              'Notification Shade Panel',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          _buildNotificationPreviewCard(context, theme, colorScheme),
+
+          const SizedBox(height: 16),
+
+          // 3. Master Persistent Notification Switch
           Card(
             child: SwitchListTile.adaptive(
               value: prefs.persistentNotificationEnabled,
@@ -325,6 +340,181 @@ class NotificationSettingsScreen extends ConsumerWidget {
           AppHaptics.contextClick();
           Navigator.of(context).pop();
         },
+      ),
+    );
+  }
+
+  Widget _buildNotificationPreviewCard(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF131720),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Notification System Header
+            Row(
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E88E5),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.signal_cellular_alt_rounded,
+                    color: Colors.white,
+                    size: 13,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'ByteMeter',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Text(
+                  ' · Now',
+                  style: TextStyle(
+                    color: Color(0xFF8E95A3),
+                    fontSize: 12,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  color: Color(0xFF8E95A3),
+                  size: 18,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Section Title
+            const Text(
+              'Internet Speed Meter',
+              style: TextStyle(
+                color: Color(0xFFE0E3EB),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            // 4-Column Metric Grid
+            Row(
+              children: [
+                _buildMetricColumn(
+                  icon: Icons.arrow_downward_rounded,
+                  iconColor: const Color(0xFF00E5FF),
+                  label: 'Down',
+                  value: '12 KB/s',
+                ),
+                _buildMetricColumn(
+                  icon: Icons.arrow_upward_rounded,
+                  iconColor: const Color(0xFF536DFE),
+                  label: 'Up',
+                  value: '812 B/s',
+                ),
+                _buildMetricColumn(
+                  icon: Icons.signal_cellular_alt_rounded,
+                  iconColor: const Color(0xFF42A5F5),
+                  label: 'Mobile',
+                  value: '0.5 MB',
+                ),
+                _buildMetricColumn(
+                  icon: Icons.wifi_rounded,
+                  iconColor: const Color(0xFF29B6F6),
+                  label: 'WiFi',
+                  value: '0 MB',
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(
+              color: Color(0xFF222836),
+              height: 1,
+              thickness: 1,
+            ),
+            const SizedBox(height: 8),
+            // Footer Row
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'ByteMeter  |  Real-time network monitoring',
+                  style: TextStyle(
+                    color: Color(0xFF7A808C),
+                    fontSize: 10,
+                  ),
+                ),
+                Icon(
+                  Icons.settings_outlined,
+                  color: Color(0xFF9AA0A6),
+                  size: 16,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricColumn({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+  }) {
+    return Expanded(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 16),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF9AA0A6),
+                    fontSize: 10,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
