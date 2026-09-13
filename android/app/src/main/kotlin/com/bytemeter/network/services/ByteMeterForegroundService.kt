@@ -89,7 +89,7 @@ class ByteMeterForegroundService : Service() {
         openSettingsPendingIntent = createOpenSettingsPendingIntent()
 
         val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-        isMetric1000 = prefs.getBoolean("flutter.metric_base_1000", false)
+        isMetric1000 = prefs.getBoolean("flutter.metric_base_1000", true)
         inBits = prefs.getBoolean("flutter.speed_unit_bits", false)
         aodMode = prefs.getBoolean("flutter.aod_mode_enabled", false)
         val thresholdVal: Long = try {
@@ -421,7 +421,7 @@ class ByteMeterForegroundService : Service() {
 
     private fun createOpenAppPendingIntent(): PendingIntent {
         val launchIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -433,7 +433,7 @@ class ByteMeterForegroundService : Service() {
 
     private fun createOpenSettingsPendingIntent(): PendingIntent {
         val launchIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra(EXTRA_OPEN_NOTIFICATION_SETTINGS, true)
         }
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

@@ -282,5 +282,20 @@ void main() {
       final hash = await bridge.hashSubscriberId('test_sub');
       expect(hash, 'hash_789');
     });
+
+    test('notification action stream emits events on openNotificationSettings method call', () async {
+      final actions = <String>[];
+      final sub = bridge.onNotificationAction.listen(actions.add);
+
+      final message = const StandardMethodCodec().encodeMethodCall(
+        const MethodCall('openNotificationSettings'),
+      );
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .handlePlatformMessage(channel.name, message, (ByteData? data) {});
+
+      expect(actions, contains('openNotificationSettings'));
+      await sub.cancel();
+      bridge.dispose();
+    });
   });
 }

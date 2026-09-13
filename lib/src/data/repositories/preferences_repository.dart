@@ -79,6 +79,7 @@ class PreferencesRepository {
   final NativeTrafficBridge? _bridge;
   late final StreamController<UserPreferences> _stateController;
   late UserPreferences _currentPreferences;
+  bool _isEnsuringService = false;
 
   /// Current cached user preferences snapshot.
   UserPreferences get current => _currentPreferences;
@@ -180,18 +181,24 @@ class PreferencesRepository {
   /// Ensures the persistent speed monitoring foreground service is running
   /// if authorized and enabled in user preferences.
   Future<bool> ensureServiceRunningIfAllowed() async {
-    final bridge = _bridge;
-    if (bridge == null) return false;
-    if (!_currentPreferences.persistentNotificationEnabled) return false;
+    if (_isEnsuringService) return false;
+    _isEnsuringService = true;
+    try {
+      final bridge = _bridge;
+      if (bridge == null) return false;
+      if (!_currentPreferences.persistentNotificationEnabled) return false;
 
-    final hasUsage = await bridge.hasUsagePermission();
-    if (!hasUsage) return false;
+      final hasUsage = await bridge.hasUsagePermission();
+      if (!hasUsage) return false;
 
-    final isRunning = await bridge.isServiceRunning();
-    if (!isRunning) {
-      return await bridge.startForegroundService();
+      final isRunning = await bridge.isServiceRunning();
+      if (!isRunning) {
+        return await bridge.startForegroundService();
+      }
+      return true;
+    } finally {
+      _isEnsuringService = false;
     }
-    return true;
   }
 
   /// Sets the status bar speed notification icon format.

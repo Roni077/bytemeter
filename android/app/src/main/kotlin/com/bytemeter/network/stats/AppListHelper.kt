@@ -10,9 +10,12 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.Log
+import androidx.core.content.res.ResourcesCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
@@ -20,6 +23,7 @@ class AppListHelper(private val context: Context) {
     private val packageManager: PackageManager = context.packageManager
     private val iconCache = android.util.LruCache<String, ByteArray>(128)
     private val failedPackages = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
+    private val iconSemaphore = Semaphore(2)
 
     suspend fun getInstalledApps(): List<Map<String, Any?>> = withContext(Dispatchers.IO) {
         val installedApps = try {
@@ -70,24 +74,44 @@ class AppListHelper(private val context: Context) {
         }
         iconCache.get(packageName)?.let { return@withContext it }
 
-        try {
-            val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
-            } else {
-                @Suppress("DEPRECATION")
-                packageManager.getApplicationInfo(packageName, 0)
-            }
-            val drawable = packageManager.getApplicationIcon(appInfo)
-            val bytes = drawableToPngByteArray(drawable)
-            if (bytes != null) {
-                iconCache.put(packageName, bytes)
-            } else {
+        iconSemaphore.withPermit {
+            iconCache.get(packageName)?.let { return@withPermit it }
+
+            try {
+                val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
+                } else {
+                    @Suppress("DEPRECATION")
+                    packageManager.getApplicationInfo(packageName, 0)
+                }
+
+                val drawable: Drawable = if (appInfo.icon != 0) {
+                    try {
+                        val resources = packageManager.getResourcesForApplication(appInfo)
+                        ResourcesCompat.getDrawable(resources, appInfo.icon, null)
+                            ?: appInfo.loadIcon(packageManager)
+                    } catch (_: Exception) {
+                        try {
+                            appInfo.loadIcon(packageManager)
+                        } catch (_: Exception) {
+                            packageManager.defaultActivityIcon
+                        }
+                    }
+                } else {
+                    packageManager.defaultActivityIcon
+                }
+
+                val bytes = drawableToPngByteArray(drawable)
+                if (bytes != null) {
+                    iconCache.put(packageName, bytes)
+                } else {
+                    failedPackages.add(packageName)
+                }
+                bytes
+            } catch (e: Exception) {
                 failedPackages.add(packageName)
+                null
             }
-            bytes
-        } catch (e: Exception) {
-            failedPackages.add(packageName)
-            null
         }
     }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/providers/core_providers.dart';
@@ -6,6 +7,7 @@ import 'features/data_plans/data_plans_screen.dart';
 import 'features/history/history_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/navigation/widgets/modern_bottom_nav_bar.dart';
+import 'features/settings/screens/notification_settings_screen.dart';
 import 'features/settings/settings_screen.dart';
 
 /// Root navigation container providing seamless floating bottom navigation between
@@ -31,6 +33,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   late final ScrollController _historyScrollController;
   late final ScrollController _plansScrollController;
   late final ScrollController _settingsScrollController;
+  StreamSubscription<String>? _notificationActionSub;
 
   @override
   void initState() {
@@ -42,6 +45,23 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     _historyScrollController = ScrollController();
     _plansScrollController = ScrollController();
     _settingsScrollController = ScrollController();
+
+    _notificationActionSub = ref
+        .read(nativeTrafficBridgeProvider)
+        .onNotificationAction
+        .listen((action) {
+      if (action == 'openNotificationSettings' && mounted) {
+        setState(() {
+          _currentIndex = 3;
+          _visitedIndices.add(3);
+        });
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const NotificationSettingsScreen(),
+          ),
+        );
+      }
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -60,6 +80,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _notificationActionSub?.cancel();
     _homeScrollController.dispose();
     _historyScrollController.dispose();
     _plansScrollController.dispose();

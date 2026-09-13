@@ -22,6 +22,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleIntent(intent)
     }
 

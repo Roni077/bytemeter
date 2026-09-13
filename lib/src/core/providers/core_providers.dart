@@ -11,7 +11,9 @@ import '../native/speed_stream_listener.dart';
 
 /// Provider for the native Android platform channel bridge.
 final nativeTrafficBridgeProvider = Provider<NativeTrafficBridge>((ref) {
-  return NativeTrafficBridge();
+  final bridge = NativeTrafficBridge();
+  ref.onDispose(bridge.dispose);
+  return bridge;
 });
 
 /// Provider for the sub-second speed event stream listener.

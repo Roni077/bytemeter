@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import '../../data/models/app_info.dart';
 import '../../data/models/enums.dart';
@@ -8,9 +9,28 @@ import 'platform_channel.dart';
 class NativeTrafficBridge {
   NativeTrafficBridge({
     MethodChannel? channel,
-  }) : _channel = channel ?? PlatformChannels.bridgeMethodChannel;
+  }) : _channel = channel ?? PlatformChannels.bridgeMethodChannel {
+    _initMethodCallHandler();
+  }
 
   final MethodChannel _channel;
+  final StreamController<String> _notificationActionController =
+      StreamController<String>.broadcast();
+
+  /// Stream emitting incoming notification actions from native Android (e.g. 'openNotificationSettings').
+  Stream<String> get onNotificationAction => _notificationActionController.stream;
+
+  void _initMethodCallHandler() {
+    try {
+      _channel.setMethodCallHandler((call) async {
+        if (call.method == 'openNotificationSettings') {
+          _notificationActionController.add('openNotificationSettings');
+        }
+      });
+    } catch (_) {
+      // Ignore if running in a pure test environment where the binary messenger is not bound.
+    }
+  }
 
   /// Checks if `PACKAGE_USAGE_STATS` is granted to ByteMeter.
   Future<bool> hasUsagePermission() async {
@@ -332,5 +352,11 @@ class NativeTrafficBridge {
       <String, dynamic>{'id': id},
     );
     return result ?? '';
+  }
+
+  /// Disposes resources held by the bridge.
+  void dispose() {
+    _channel.setMethodCallHandler(null);
+    _notificationActionController.close();
   }
 }
