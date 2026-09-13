@@ -44,6 +44,8 @@ class TrafficSnapshotManager(
         }
     }
 
+    @Volatile private var isCallbackRegistered: Boolean = false
+
     init {
         try {
             connectivityManager.allNetworks.forEach { network ->
@@ -55,6 +57,7 @@ class TrafficSnapshotManager(
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .build()
             connectivityManager.registerNetworkCallback(request, callback)
+            isCallbackRegistered = true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register network callback", e)
         }
@@ -62,9 +65,12 @@ class TrafficSnapshotManager(
 
     override fun close() {
         scope.cancel()
-        runCatching {
-            connectivityManager.unregisterNetworkCallback(callback)
-        }.onFailure { Log.e(TAG, "Error unregistering network callback", it) }
+        if (isCallbackRegistered) {
+            runCatching {
+                connectivityManager.unregisterNetworkCallback(callback)
+            }.onFailure { Log.e(TAG, "Error unregistering network callback", it) }
+            isCallbackRegistered = false
+        }
     }
 
     fun setForceFallback(force: Boolean) {
@@ -121,11 +127,19 @@ class TrafficSnapshotManager(
         val mobileDown = mobileRxFile.readLongOrZero()
         val wifiUp = wifiTxFile.readLongOrZero() + ethTxFile.readLongOrZero()
         val wifiDown = wifiRxFile.readLongOrZero() + ethRxFile.readLongOrZero()
-        return@withContext TrafficSnapshot(
-            up = mobileUp + wifiUp,
-            down = mobileDown + wifiDown,
-            interfaces = interfaces
-        )
+        val totalUp = mobileUp + wifiUp
+        val totalDown = mobileDown + wifiDown
+
+        if (totalUp > 0L || totalDown > 0L) {
+            return@withContext TrafficSnapshot(
+                up = totalUp,
+                down = totalDown,
+                interfaces = interfaces
+            )
+        }
+
+        // On modern Android (API 29+ / Exynos 850), sysfs is blocked by SELinux; delegate cleanly
+        return@withContext regularUpdateSnapshot()
     }
 
     private fun File.readLongOrZero(): Long = runCatching {

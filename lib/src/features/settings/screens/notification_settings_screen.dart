@@ -47,7 +47,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: (!state.isServiceRunning && prefs.persistentNotificationEnabled)
+              onTap: (!state.isServiceRunning && prefs.persistentNotificationEnabled && !state.isTogglingService)
                   ? () {
                       AppHaptics.selectionTick();
                       controller.setPersistentNotificationEnabled(true);
@@ -164,10 +164,12 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 Icons.speed_rounded,
                 color: colorScheme.primary,
               ),
-              onChanged: (enabled) {
-                AppHaptics.selectionTick();
-                controller.setPersistentNotificationEnabled(enabled);
-              },
+              onChanged: state.isTogglingService
+                  ? null
+                  : (enabled) {
+                      AppHaptics.selectionTick();
+                      controller.setPersistentNotificationEnabled(enabled);
+                    },
             ),
           ),
 

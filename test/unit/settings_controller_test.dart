@@ -250,6 +250,24 @@ void main() {
       expect(bridge.serviceRunning, isFalse);
       expect(controller.state.isServiceRunning, isFalse);
     });
+
+    test('setPersistentNotificationEnabled guards against rapid concurrent toggling', () async {
+      bridge.hasPermission = true;
+      bridge.serviceRunning = false;
+
+      final controller = SettingsController(prefsRepo: prefsRepo, bridge: bridge);
+      expect(controller.state.isTogglingService, isFalse);
+
+      // Launch two concurrent toggle calls
+      final future1 = controller.setPersistentNotificationEnabled(true);
+      final future2 = controller.setPersistentNotificationEnabled(false);
+
+      await Future.wait([future1, future2]);
+
+      expect(controller.state.isTogglingService, isFalse);
+      expect(controller.state.isServiceRunning, isTrue);
+      expect(prefsRepo.current.persistentNotificationEnabled, isTrue);
+    });
   });
 }
 

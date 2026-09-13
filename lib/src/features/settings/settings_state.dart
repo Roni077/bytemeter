@@ -10,6 +10,7 @@ class SettingsState {
     this.isIgnoringBatteryOptimizations = false,
     this.hasPhonePermission = false,
     this.isServiceRunning = false,
+    this.isTogglingService = false,
     this.isLoading = false,
     this.errorMessage,
     this.appVersion = '1.0.0',
@@ -24,6 +25,7 @@ class SettingsState {
   final bool isIgnoringBatteryOptimizations;
   final bool hasPhonePermission;
   final bool isServiceRunning;
+  final bool isTogglingService;
   final bool isLoading;
   final String? errorMessage;
   final String appVersion;
@@ -38,6 +40,7 @@ class SettingsState {
     bool? isIgnoringBatteryOptimizations,
     bool? hasPhonePermission,
     bool? isServiceRunning,
+    bool? isTogglingService,
     bool? isLoading,
     String? errorMessage,
     bool clearError = false,
@@ -55,6 +58,7 @@ class SettingsState {
           isIgnoringBatteryOptimizations ?? this.isIgnoringBatteryOptimizations,
       hasPhonePermission: hasPhonePermission ?? this.hasPhonePermission,
       isServiceRunning: isServiceRunning ?? this.isServiceRunning,
+      isTogglingService: isTogglingService ?? this.isTogglingService,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       appVersion: appVersion ?? this.appVersion,

@@ -38,14 +38,24 @@ class ByteMeterPlatformBridge(
     private val appListHelper = AppListHelper(context)
     private val mainHandler = Handler(Looper.getMainLooper())
     private var methodChannel: MethodChannel? = null
+    private var eventChannel: EventChannel? = null
 
     fun register(messenger: BinaryMessenger) {
         val channel = MethodChannel(messenger, ChannelConstants.METHOD_CHANNEL_NAME)
         channel.setMethodCallHandler(this)
         methodChannel = channel
 
-        val eventChannel = EventChannel(messenger, ChannelConstants.EVENT_CHANNEL_NAME)
-        eventChannel.setStreamHandler(this)
+        val events = EventChannel(messenger, ChannelConstants.EVENT_CHANNEL_NAME)
+        events.setStreamHandler(this)
+        eventChannel = events
+    }
+
+    fun unregister() {
+        methodChannel?.setMethodCallHandler(null)
+        methodChannel = null
+        eventChannel?.setStreamHandler(null)
+        eventChannel = null
+        clearActiveSink()
     }
 
     fun notifyOpenNotificationSettings() {
@@ -347,11 +357,17 @@ class ByteMeterPlatformBridge(
         @Volatile private var activeEventSink: EventChannel.EventSink? = null
         private val mainHandler = Handler(Looper.getMainLooper())
 
+        fun clearActiveSink() {
+            activeEventSink = null
+        }
+
         fun emitSpeedSnapshot(snapshot: TrafficSnapshot) {
-            val sink = activeEventSink ?: return
+            if (activeEventSink == null) return
+            val payload = snapshot.toMap()
             mainHandler.post {
                 try {
-                    sink.success(snapshot.toMap())
+                    val sink = activeEventSink ?: return@post
+                    sink.success(payload)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error emitting speed snapshot to EventChannel", e)
                 }

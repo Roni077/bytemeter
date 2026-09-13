@@ -31,7 +31,15 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        platformBridge?.unregister()
+        platformBridge = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
     override fun onDestroy() {
+        platformBridge?.unregister()
+        platformBridge = null
         activityScope.cancel()
         super.onDestroy()
     }

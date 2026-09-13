@@ -124,14 +124,20 @@ class SettingsController extends StateNotifier<SettingsState> {
     state = state.copyWith(preferences: prefsRepo.current);
   }
 
-  /// Master switch for persistent foreground speed notification.
+  /// Master switch for persistent foreground speed notification with re-entrancy guard.
   Future<void> setPersistentNotificationEnabled(bool enable) async {
-    await prefsRepo.setPersistentNotificationEnabled(enable);
-    final running = await bridge.isServiceRunning();
-    state = state.copyWith(
-      preferences: prefsRepo.current,
-      isServiceRunning: running,
-    );
+    if (state.isTogglingService) return;
+    state = state.copyWith(isTogglingService: true);
+    try {
+      await prefsRepo.setPersistentNotificationEnabled(enable);
+      final running = await bridge.isServiceRunning();
+      state = state.copyWith(
+        preferences: prefsRepo.current,
+        isServiceRunning: running,
+      );
+    } finally {
+      state = state.copyWith(isTogglingService: false);
+    }
   }
 
   /// Updates status bar notification icon style.
