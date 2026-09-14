@@ -19,6 +19,10 @@ class HomeState {
     TrafficSnapshot? currentSpeed,
     this.hasUsagePermission = true,
     this.isLoading = false,
+    this.isTodayUsageLoading = false,
+    this.isTopAppsLoading = false,
+    this.isWeeklyLoading = false,
+    this.isForecastLoading = false,
     this.errorMessage,
   })  : todayUsage = todayUsage ?? UsageData(),
         currentSpeed = currentSpeed ?? TrafficSnapshot.zero();
@@ -50,8 +54,20 @@ class HomeState {
   /// Whether Android Usage Access permission has been granted.
   final bool hasUsagePermission;
 
-  /// Whether data is actively loading or refreshing.
+  /// Whether any dashboard metric is actively loading or refreshing.
   final bool isLoading;
+
+  /// Whether today's primary usage metric is actively loading.
+  final bool isTodayUsageLoading;
+
+  /// Whether the top applications preview is actively loading.
+  final bool isTopAppsLoading;
+
+  /// Whether the weekly stacked bar chart breakdown is actively loading.
+  final bool isWeeklyLoading;
+
+  /// Whether predictive end-of-day forecast and trend metrics are actively loading.
+  final bool isForecastLoading;
 
   /// Optional error message if an operation failed.
   final String? errorMessage;
@@ -86,9 +102,20 @@ class HomeState {
     TrafficSnapshot? currentSpeed,
     bool? hasUsagePermission,
     bool? isLoading,
+    bool? isTodayUsageLoading,
+    bool? isTopAppsLoading,
+    bool? isWeeklyLoading,
+    bool? isForecastLoading,
     String? errorMessage,
     bool clearError = false,
   }) {
+    final nextTodayLoading = isTodayUsageLoading ?? this.isTodayUsageLoading;
+    final nextAppsLoading = isTopAppsLoading ?? this.isTopAppsLoading;
+    final nextWeeklyLoading = isWeeklyLoading ?? this.isWeeklyLoading;
+    final nextForecastLoading = isForecastLoading ?? this.isForecastLoading;
+    final nextOverallLoading = isLoading ??
+        (nextTodayLoading || nextAppsLoading || nextWeeklyLoading || nextForecastLoading);
+
     return HomeState(
       selectedNetworkType: selectedNetworkType ?? this.selectedNetworkType,
       todayUsage: todayUsage ?? this.todayUsage,
@@ -99,7 +126,11 @@ class HomeState {
       topApps: topApps ?? this.topApps,
       currentSpeed: currentSpeed ?? this.currentSpeed,
       hasUsagePermission: hasUsagePermission ?? this.hasUsagePermission,
-      isLoading: isLoading ?? this.isLoading,
+      isLoading: nextOverallLoading,
+      isTodayUsageLoading: nextTodayLoading,
+      isTopAppsLoading: nextAppsLoading,
+      isWeeklyLoading: nextWeeklyLoading,
+      isForecastLoading: nextForecastLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -119,6 +150,10 @@ class HomeState {
           currentSpeed == other.currentSpeed &&
           hasUsagePermission == other.hasUsagePermission &&
           isLoading == other.isLoading &&
+          isTodayUsageLoading == other.isTodayUsageLoading &&
+          isTopAppsLoading == other.isTopAppsLoading &&
+          isWeeklyLoading == other.isWeeklyLoading &&
+          isForecastLoading == other.isForecastLoading &&
           errorMessage == other.errorMessage;
 
   @override
@@ -133,12 +168,16 @@ class HomeState {
         currentSpeed,
         hasUsagePermission,
         isLoading,
+        isTodayUsageLoading,
+        isTopAppsLoading,
+        isWeeklyLoading,
+        isForecastLoading,
         errorMessage,
       );
 
   @override
   String toString() {
-    return 'HomeState(network: $selectedNetworkType, today: $todayUsage, predicted: $predictedBytes, trend: $trendPercentage%, loading: $isLoading)';
+    return 'HomeState(network: $selectedNetworkType, today: $todayUsage, predicted: $predictedBytes, trend: $trendPercentage%, loading: $isLoading, todayLoading: $isTodayUsageLoading, appsLoading: $isTopAppsLoading, weeklyLoading: $isWeeklyLoading, forecastLoading: $isForecastLoading)';
   }
 }
 

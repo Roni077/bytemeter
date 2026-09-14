@@ -5,6 +5,7 @@ import '../../core/providers/core_providers.dart';
 import '../../core/utils/data_size.dart';
 import '../../core/utils/haptics.dart';
 import 'home_controller.dart';
+import 'widgets/full_app_usage_sheet.dart';
 import 'widgets/hero_geometric_gauge.dart';
 import 'widgets/network_type_selector.dart';
 import 'widgets/permission_banner.dart';
@@ -129,12 +130,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     predictedBytes: homeState.predictedBytes,
                     todayBytes: homeState.todayUsage.totalBytes,
                     metricBase: prefs.metricBase,
+                    isLoading: homeState.isForecastLoading,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TrendCard(
                     trendPercentage: homeState.trendPercentage,
+                    isLoading: homeState.isForecastLoading,
                   ),
                 ),
               ],
@@ -145,6 +148,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             TopAppsCard(
               apps: homeState.topApps,
               totalBytes: homeState.todayUsage.totalBytes,
+              isLoading: homeState.isTopAppsLoading,
+              onViewAll: () {
+                FullAppUsageSheet.show(
+                  context: context,
+                  networkType: homeState.selectedNetworkType,
+                );
+              },
               onAppTap: (app) {
                 AppHaptics.contextClick();
                 if (app.packageName.isNotEmpty && !app.packageName.startsWith('uid_')) {

@@ -5,8 +5,13 @@ import 'package:bytemeter/src/core/native/native_traffic_bridge.dart';
 import 'package:bytemeter/src/data/models/app_info.dart';
 import 'package:bytemeter/src/data/repositories/network_usage_repository.dart';
 
+import 'package:bytemeter/src/data/models/enums.dart';
+import 'package:bytemeter/src/data/models/usage_data.dart';
+
 class MockNativeTrafficBridge extends Fake implements NativeTrafficBridge {
   int getAppIconCalls = 0;
+  int getInstalledAppsCalls = 0;
+  int getAppInfoByUidCalls = 0;
   final Map<String, Uint8List?> iconResponses = {};
   Completer<Uint8List?>? delayCompleter;
 
@@ -21,9 +26,79 @@ class MockNativeTrafficBridge extends Fake implements NativeTrafficBridge {
 
   @override
   Future<List<AppInfo>> getInstalledApps() async {
+    getInstalledAppsCalls++;
     return [
       const AppInfo(uid: 10001, packageName: 'com.google.android.youtube', label: 'YouTube'),
       const AppInfo(uid: 10002, packageName: 'com.whatsapp', label: 'WhatsApp'),
+    ];
+  }
+
+  @override
+  Future<AppInfo?> getAppInfoByUid(int uid) async {
+    getAppInfoByUidCalls++;
+    if (uid == 10001) {
+      return const AppInfo(uid: 10001, packageName: 'com.google.android.youtube', label: 'YouTube');
+    } else if (uid == 10002) {
+      return const AppInfo(uid: 10002, packageName: 'com.whatsapp', label: 'WhatsApp');
+    }
+    return null;
+  }
+
+  @override
+  Future<List<UsageData>> queryAppBuckets({
+    required NetworkType networkType,
+    String? subscriberId,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    return [
+      UsageData(
+        uid: 10002,
+        uploadBytes: 1000,
+        downloadBytes: 2000,
+        totalBytes: 3000,
+        startTime: startTime,
+        endTime: endTime,
+      ),
+      UsageData(
+        uid: 10001,
+        uploadBytes: 5000,
+        downloadBytes: 15000,
+        totalBytes: 20000,
+        startTime: startTime,
+        endTime: endTime,
+      ),
+    ];
+  }
+
+  @override
+  Future<UsageData> queryDeviceSummary({
+    required NetworkType networkType,
+    String? subscriberId,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    return UsageData(
+      uploadBytes: 6000,
+      downloadBytes: 17000,
+      totalBytes: 23000,
+      startTime: startTime,
+      endTime: endTime,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> queryCombinedTimeline({
+    String? subscriberId,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    return [
+      {
+        'startTime': startTime.millisecondsSinceEpoch,
+        'cellTotal': 10000,
+        'wifiTotal': 20000,
+      }
     ];
   }
 }
@@ -108,6 +183,42 @@ void main() {
 
       final youtube = apps.firstWhere((a) => a.packageName == 'com.google.android.youtube');
       expect(youtube.iconBytes, isNull);
+    });
+  });
+
+  group('NetworkUsageRepository Progressive & On-Demand Data Loading', () {
+    test('getTopAppUsages returns top N apps sorted descending by totalBytes', () async {
+      final now = DateTime.now();
+      final topApps = await repo.getTopAppUsages(
+        startTime: now.subtract(const Duration(hours: 1)),
+        endTime: now,
+        networkType: NetworkType.mobile,
+        limit: 1,
+      );
+
+      expect(topApps.length, equals(1));
+      expect(topApps.first.appInfo.uid, equals(10001)); // highest usage (20,000 bytes)
+      expect(topApps.first.totalBytes, equals(20000));
+    });
+
+    test('getAppInfo resolves single UID on-demand without querying getInstalledApps', () async {
+      expect(mockBridge.getInstalledAppsCalls, 0);
+
+      final appInfo = await repo.getAppInfo(10001);
+      expect(appInfo.packageName, equals('com.google.android.youtube'));
+      expect(mockBridge.getAppInfoByUidCalls, 1);
+      expect(mockBridge.getInstalledAppsCalls, 0); // Must NOT enumerate all apps!
+    });
+
+    test('getCombinedTimelineRange fetches batch timeline query', () async {
+      final now = DateTime.now();
+      final timeline = await repo.getCombinedTimelineRange(
+        startTime: now.subtract(const Duration(days: 7)),
+        endTime: now,
+      );
+
+      expect(timeline.isNotEmpty, isTrue);
+      expect(timeline.first['cellTotal'], equals(10000));
     });
   });
 }

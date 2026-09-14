@@ -275,6 +275,24 @@ class NativeTrafficBridge {
     return const [];
   }
 
+  /// Fetches app info descriptor for a single UID on-demand without querying all installed apps.
+  Future<AppInfo?> getAppInfoByUid(int uid) async {
+    try {
+      final result = await _channel.invokeMapMethod<dynamic, dynamic>(
+        'getAppInfoByUid',
+        <String, dynamic>{'uid': uid},
+      );
+      if (result != null) {
+        return AppInfo.fromMap(result);
+      }
+    } on PlatformException {
+      // Fallback on platform error
+    } catch (_) {
+      // Fallback in test or unexpected environments
+    }
+    return null;
+  }
+
   /// Queries combined 90-day (or custom range) daily cellular and Wi-Fi timeline in a single batch call.
   Future<List<Map<String, dynamic>>> queryCombinedTimeline({
     String? subscriberId,

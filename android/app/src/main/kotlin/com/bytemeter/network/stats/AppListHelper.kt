@@ -65,6 +65,52 @@ class AppListHelper(private val context: Context) {
         specialApps + appList
     }
 
+    suspend fun getAppInfoByUid(uid: Int): Map<String, Any?> = withContext(Dispatchers.IO) {
+        when (uid) {
+            NetworkStatsHelper.UID_ALL -> mapOf("uid" to uid, "packageName" to "system.all_apps", "label" to "All Apps", "iconBytes" to null, "isSpecial" to true)
+            NetworkStatsHelper.UID_TETHERING -> mapOf("uid" to uid, "packageName" to "system.tethering", "label" to "Tethering & Hotspot", "iconBytes" to null, "isSpecial" to true)
+            NetworkStatsHelper.UID_REMOVED -> mapOf("uid" to uid, "packageName" to "system.removed_apps", "label" to "Removed Apps", "iconBytes" to null, "isSpecial" to true)
+            NetworkStatsHelper.UID_OTHER_USERS -> mapOf("uid" to uid, "packageName" to "system.other_users", "label" to "Other Users", "iconBytes" to null, "isSpecial" to true)
+            NetworkStatsHelper.UID_UNKNOWN -> mapOf("uid" to uid, "packageName" to "system.unknown", "label" to "Unknown Services", "iconBytes" to null, "isSpecial" to true)
+            else -> {
+                val packages = try {
+                    packageManager.getPackagesForUid(uid)
+                } catch (e: Exception) {
+                    null
+                }
+                if (!packages.isNullOrEmpty()) {
+                    val pkg = packages[0]
+                    val appInfo = try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            packageManager.getApplicationInfo(pkg, PackageManager.ApplicationInfoFlags.of(0L))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            packageManager.getApplicationInfo(pkg, 0)
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+                    val label = appInfo?.loadLabel(packageManager)?.toString() ?: pkg
+                    mapOf(
+                        "uid" to uid,
+                        "packageName" to pkg,
+                        "label" to label,
+                        "iconBytes" to null,
+                        "isSpecial" to false
+                    )
+                } else {
+                    mapOf(
+                        "uid" to uid,
+                        "packageName" to "uid_$uid",
+                        "label" to "UID $uid",
+                        "iconBytes" to null,
+                        "isSpecial" to (uid < 0)
+                    )
+                }
+            }
+        }
+    }
+
     suspend fun getAppIcon(packageName: String): ByteArray? = withContext(Dispatchers.IO) {
         if (packageName.isEmpty() || packageName.startsWith("system.") || packageName.startsWith("uid_")) {
             return@withContext null

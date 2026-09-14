@@ -8,11 +8,15 @@ class TopAppsCard extends StatelessWidget {
     required this.apps,
     this.totalBytes,
     this.onAppTap,
+    this.onViewAll,
+    this.isLoading = false,
   });
 
   final List<AppUsageBarData> apps;
   final int? totalBytes;
   final void Function(AppUsageBarData app)? onAppTap;
+  final VoidCallback? onViewAll;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -51,18 +55,79 @@ class TopAppsCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(
-                  '${apps.length} Apps',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.outline,
+                if (onViewAll != null)
+                  InkWell(
+                    onTap: onViewAll,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'View All',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Text(
+                    '${apps.length} Apps',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Content: App Usage Bar Chart or Empty State
-            if (apps.isEmpty)
+            // Content: Loading Skeleton, App Usage Bar Chart or Empty State
+            if (isLoading && apps.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: List.generate(
+                    3,
+                    (index) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else if (apps.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(

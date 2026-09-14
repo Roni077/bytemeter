@@ -27,6 +27,7 @@ object ChannelConstants {
 
     // App List & Launcher
     const val GET_INSTALLED_APPS = "getInstalledApps"
+    const val GET_APP_INFO_BY_UID = "getAppInfoByUid"
     const val GET_APP_ICON = "getAppIcon"
     const val LAUNCH_APP = "launchApp"
     const val QUERY_COMBINED_TIMELINE = "queryCombinedTimeline"

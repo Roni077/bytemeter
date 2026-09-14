@@ -10,11 +10,13 @@ class PredictionCard extends StatelessWidget {
     required this.predictedBytes,
     required this.todayBytes,
     this.metricBase = MetricBase.decimal1000,
+    this.isLoading = false,
   });
 
   final int predictedBytes;
   final int todayBytes;
   final MetricBase metricBase;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -73,60 +75,88 @@ class PredictionCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Large 3-Part Formatted Prediction Value
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  parts.first,
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: colorScheme.onSurface,
-                  ),
+            if (isLoading && predictedBytes == 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 90,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 140,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
                 ),
-                if (parts.second.isNotEmpty)
+              )
+            else ...[
+              // Large 3-Part Formatted Prediction Value
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
                   Text(
-                    parts.second,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurfaceVariant,
+                    parts.first,
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                const SizedBox(width: 6),
-                Text(
-                  parts.third,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.secondary,
+                  if (parts.second.isNotEmpty)
+                    Text(
+                      parts.second,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  Text(
+                    parts.third,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.secondary,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
+                ],
+              ),
+              const SizedBox(height: 6),
 
-            // Remaining to consume subtitle
-            Row(
-              children: [
-                Icon(
-                  Icons.trending_up_rounded,
-                  size: 16,
-                  color: colorScheme.outline,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    remainingBytes > 0
-                        ? '+${remainingSize.format(base: metricBase)} expected by midnight'
-                        : 'On track with predicted budget',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+              // Remaining to consume subtitle
+              Row(
+                children: [
+                  Icon(
+                    Icons.trending_up_rounded,
+                    size: 16,
+                    color: colorScheme.outline,
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      remainingBytes > 0
+                          ? '+${remainingSize.format(base: metricBase)} expected by midnight'
+                          : 'On track with predicted budget',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

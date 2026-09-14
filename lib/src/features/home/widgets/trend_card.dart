@@ -6,9 +6,11 @@ class TrendCard extends StatelessWidget {
   const TrendCard({
     super.key,
     required this.trendPercentage,
+    this.isLoading = false,
   });
 
   final double trendPercentage;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -88,58 +90,86 @@ class TrendCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Large Trend Percentage Badge
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(trendIcon, size: 20, color: badgeTextColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$trendPrefix${trendPercentage.abs().toStringAsFixed(1)}%',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: badgeTextColor,
-                        ),
+            if (isLoading && trendPercentage == 0.0)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 70,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Comparison Subtitle
-            Row(
-              children: [
-                Icon(
-                  Icons.history_rounded,
-                  size: 16,
-                  color: colorScheme.outline,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    isAccelerated
-                        ? 'Higher burn rate than prior 6-day average'
-                        : (isDecelerated
-                            ? 'Lower burn rate than prior 6-day average'
-                            : 'Consistent with 6-day historical baseline'),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 130,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              )
+            else ...[
+              // Large Trend Percentage Badge
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: badgeColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(trendIcon, size: 20, color: badgeTextColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$trendPrefix${trendPercentage.abs().toStringAsFixed(1)}%',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: badgeTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Comparison Subtitle
+              Row(
+                children: [
+                  Icon(
+                    Icons.history_rounded,
+                    size: 16,
+                    color: colorScheme.outline,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      isAccelerated
+                          ? 'Higher burn rate than prior 6-day average'
+                          : (isDecelerated
+                              ? 'Lower burn rate than prior 6-day average'
+                              : 'Consistent with 6-day historical baseline'),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

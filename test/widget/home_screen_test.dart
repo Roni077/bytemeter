@@ -203,4 +203,22 @@ void main() {
     await tester.tap(find.text('Grant Permission'));
     await tester.pump(const Duration(milliseconds: 100));
   });
+
+  testWidgets('TopAppsCard renders View All and opens FullAppUsageSheet modal', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final viewAllFinder = find.text('View All');
+    expect(viewAllFinder, findsOneWidget);
+
+    await tester.tap(viewAllFinder);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('All Applications Today'), findsOneWidget);
+  });
 }

@@ -171,6 +171,15 @@ class ByteMeterPlatformBridge(
                     }
                 }
             }
+            ChannelConstants.GET_APP_INFO_BY_UID -> {
+                val uid = call.argument<Int>("uid") ?: 0
+                scope.launch {
+                    val info = appListHelper.getAppInfoByUid(uid)
+                    withContext(Dispatchers.Main) {
+                        result.success(info)
+                    }
+                }
+            }
             ChannelConstants.GET_APP_ICON -> {
                 val packageName = call.argument<String>("packageName") ?: ""
                 scope.launch {

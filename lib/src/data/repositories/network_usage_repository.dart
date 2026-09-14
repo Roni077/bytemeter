@@ -99,12 +99,8 @@ class NetworkUsageRepository {
     return _installedAppsList;
   }
 
-  /// Retrieves cached app info for a specific UID, or generates a fallback descriptor.
+  /// Retrieves cached app info for a specific UID, or fetches on demand without full-device app scans.
   Future<AppInfo> getAppInfo(int uid, {bool loadIcon = false}) async {
-    if (!_appsLoaded) {
-      await getInstalledApps();
-    }
-
     if (_appCache.containsKey(uid)) {
       var app = _appCache[uid]!;
       if (app.iconBytes == null && _iconCache.containsKey(app.packageName)) {
@@ -133,6 +129,27 @@ class NetworkUsageRepository {
       return const AppInfo(uid: SpecialUids.uidRemoved, packageName: 'removed', label: 'Removed Apps', isSpecial: true);
     } else if (uid == SpecialUids.uidOtherUsers) {
       return const AppInfo(uid: SpecialUids.uidOtherUsers, packageName: 'other_users', label: 'Other Users & System', isSpecial: true);
+    }
+
+    // Fast on-demand lookup for single UID (avoids enumerating 300+ installed packages on Android)
+    final nativeApp = await _bridge.getAppInfoByUid(uid);
+    if (nativeApp != null) {
+      var app = nativeApp;
+      if (loadIcon &&
+          app.iconBytes == null &&
+          !app.isSpecial &&
+          app.packageName.isNotEmpty &&
+          !app.packageName.startsWith('uid_')) {
+        final icon = await getAppIcon(app.packageName);
+        if (icon != null) {
+          app = app.copyWith(iconBytes: icon);
+        }
+      }
+      _appCache[uid] = app;
+      if (app.packageName.isNotEmpty) {
+        _packageAppCache[app.packageName] = app;
+      }
+      return app;
     }
 
     return AppInfo(uid: uid, packageName: 'uid_$uid', label: 'UID $uid', isSpecial: uid < 0);
@@ -254,6 +271,91 @@ class NetworkUsageRepository {
       startTime: start,
       endTime: end,
     );
+  }
+
+  /// Fetches combined cellular and Wi-Fi timeline for a custom date range in a single batch query.
+  Future<List<Map<String, dynamic>>> getCombinedTimelineRange({
+    required DateTime startTime,
+    required DateTime endTime,
+    String? subscriberId,
+  }) async {
+    return _bridge.queryCombinedTimeline(
+      subscriberId: subscriberId,
+      startTime: AppDateUtils.startOfDay(startTime),
+      endTime: AppDateUtils.endOfDay(endTime),
+    );
+  }
+
+  /// Fast query for top [limit] data-consuming apps for the dashboard.
+  /// Resolves app metadata and icons strictly for the top N apps rather than
+  /// querying all installed apps on the device.
+  Future<List<AppUsage>> getTopAppUsages({
+    required DateTime startTime,
+    required DateTime endTime,
+    required NetworkType networkType,
+    String? subscriberId,
+    List<int> excludedUids = const <int>[],
+    int limit = 5,
+    bool loadIcons = true,
+  }) async {
+    final rawBucketsFuture = _bridge.queryAppBuckets(
+      networkType: networkType,
+      subscriberId: subscriberId,
+      startTime: startTime,
+      endTime: endTime,
+    );
+
+    final deviceTotalFuture = _bridge.queryDeviceSummary(
+      networkType: networkType,
+      subscriberId: subscriberId,
+      startTime: startTime,
+      endTime: endTime,
+    );
+
+    final bucketResults = await Future.wait([rawBucketsFuture, deviceTotalFuture]);
+    final rawBuckets = bucketResults[0] as List<UsageData>;
+    final deviceTotal = bucketResults[1] as UsageData;
+
+    final reconciledDelta = reconcileDeviceDelta(deviceTotal, rawBuckets);
+    final allBuckets = List<UsageData>.from(rawBuckets);
+    if (reconciledDelta != null && reconciledDelta.totalBytes > 0) {
+      allBuckets.add(reconciledDelta);
+    }
+
+    final validBuckets = <UsageData>[];
+    for (final bucket in allBuckets) {
+      final uid = bucket.uid ?? SpecialUids.uidUnknown;
+      if (!excludedUids.contains(uid)) {
+        validBuckets.add(bucket);
+      }
+    }
+
+    // Sort descending by total bytes consumed
+    validBuckets.sort((a, b) => b.totalBytes.compareTo(a.totalBytes));
+
+    final topBuckets = validBuckets.take(limit).toList();
+    final peakBytes = topBuckets.isNotEmpty ? topBuckets.first.totalBytes : 1;
+
+    // Resolve app metadata and icons strictly for the top N apps
+    final appUsages = await Future.wait(
+      topBuckets.map((bucket) async {
+        final appInfo = await getAppInfo(
+          bucket.uid ?? SpecialUids.uidUnknown,
+          loadIcon: loadIcons,
+        );
+        final percentage = peakBytes > 0 ? (bucket.totalBytes / peakBytes).clamp(0.0, 1.0) : 0.0;
+        return AppUsage(
+          appInfo: appInfo,
+          primaryBytes: bucket.downloadBytes,
+          secondaryBytes: bucket.uploadBytes,
+          totalBytes: bucket.totalBytes,
+          percentage: percentage,
+          usageData: bucket,
+        );
+      }),
+    );
+
+    return appUsages;
   }
 
   /// Fetches ranked per-app bandwidth consumption for a given time window.
