@@ -96,7 +96,7 @@ class UnitsSettingsScreen extends ConsumerWidget {
                 Text(
                   '• Decimal (1000): SI standard used by cellular telecom carriers and hard drive manufacturers (1 GB = 1,000,000,000 B).\n'
                   '• Binary (1024): IEC standard used by Android OS memory and software filesystems (1 GiB = 1,073,741,824 B).\n'
-                  '• Bits vs Bytes: 8 bits = 1 byte. ISPs advertise bandwidth in Mbps (bits), while downloads are measured in MB/s (bytes).',
+                  '• Bits per second vs Bytes per second: 8 bits = 1 byte. ISPs and telecom carriers advertise bandwidth in Bits per second (bps, kbps, Mbps, Gbps), while operating systems and downloads measure transfer rates in Bytes per second (B/s, KB/s, MB/s, GB/s).',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     height: 1.4,

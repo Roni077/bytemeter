@@ -116,8 +116,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     };
 
     final unitModeLabel = prefs.speedUnitType == SpeedUnitType.bits
-        ? 'Bits (Mbps)'
-        : 'Bytes (MB/s)';
+        ? 'Bits per second'
+        : 'Bytes per second';
     final metricBaseLabel = prefs.metricBase == MetricBase.decimal1000
         ? 'Decimal (1000)'
         : 'Binary (1024)';
@@ -338,7 +338,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               iconColor: colorScheme.onTertiaryContainer,
               title: 'Units & Calculation Standards',
               subtitle: '$unitModeLabel · $metricBaseLabel · Default ${prefs.homeDefaultNetworkType.name == "mobile" ? "Cellular" : "Wi-Fi"}',
-              trailingBadge: '${prefs.speedUnitType == SpeedUnitType.bits ? "Bits" : "Bytes"} · ${prefs.metricBase.baseValue}',
+              trailingBadge: '${prefs.speedUnitType == SpeedUnitType.bits ? "Bits/s" : "Bytes/s"} · ${prefs.metricBase.baseValue}',
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(

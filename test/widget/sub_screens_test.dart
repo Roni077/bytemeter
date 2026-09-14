@@ -161,9 +161,12 @@ void main() {
       await tester.pumpWidget(createTestWidget(child: const UnitsSettingsScreen()));
       await tester.pumpAndSettle();
 
-      // Tap Bits
-      final bitsBtn = find.text('Bits (Mbps, kbps)');
-      expect(bitsBtn, findsOneWidget);
+      // Verify both options are present
+      expect(find.text('Bits per second'), findsOneWidget);
+      expect(find.text('Bytes per second'), findsOneWidget);
+
+      // Tap Bits per second
+      final bitsBtn = find.text('Bits per second');
       await tester.tap(bitsBtn);
       await tester.pumpAndSettle();
       expect(prefsRepo.current.speedUnitType, equals(SpeedUnitType.bits));

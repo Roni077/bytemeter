@@ -75,14 +75,14 @@ class SetupStepView extends StatelessWidget {
           SegmentedButton<SpeedUnitType>(
             segments: const [
               ButtonSegment(
-                value: SpeedUnitType.bytes,
-                label: Text('Bytes (KB/s, MB/s)'),
-                icon: Icon(Icons.download_rounded, size: 16),
+                value: SpeedUnitType.bits,
+                label: Text('Bits per second'),
+                icon: Icon(Icons.speed_rounded, size: 16),
               ),
               ButtonSegment(
-                value: SpeedUnitType.bits,
-                label: Text('Bits (Kbps, Mbps)'),
-                icon: Icon(Icons.speed_rounded, size: 16),
+                value: SpeedUnitType.bytes,
+                label: Text('Bytes per second'),
+                icon: Icon(Icons.download_rounded, size: 16),
               ),
             ],
             selected: {state.speedUnitType},
@@ -90,6 +90,16 @@ class SetupStepView extends StatelessWidget {
               AppHaptics.selectionTick();
               controller.setSpeedUnit(set.first);
             },
+          ),
+          const SizedBox(height: 6),
+          Text(
+            state.speedUnitType == SpeedUnitType.bits
+                ? 'Scale: ${SpeedUnitType.bits.unitSymbols} (Telecom & ISP standard)'
+                : 'Scale: ${SpeedUnitType.bytes.unitSymbols} (OS & download standard)',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 20),
 

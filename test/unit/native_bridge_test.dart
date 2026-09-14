@@ -48,6 +48,15 @@ void main() {
       expect(TimeIntervalType.monthly.displayName, 'Monthly');
       expect(TimeIntervalType.custom.displayName, 'Custom');
     });
+
+    test('SpeedUnitType strictly two options with display names and unit symbols', () {
+      expect(SpeedUnitType.values.length, 2);
+      expect(SpeedUnitType.values, containsAll([SpeedUnitType.bits, SpeedUnitType.bytes]));
+      expect(SpeedUnitType.bits.displayName, 'Bits per second');
+      expect(SpeedUnitType.bits.unitSymbols, 'bps, kbps, Mbps, Gbps');
+      expect(SpeedUnitType.bytes.displayName, 'Bytes per second');
+      expect(SpeedUnitType.bytes.unitSymbols, 'B/s, kB/s, MB/s, GB/s');
+    });
   });
 
   group('TrafficSnapshot Model', () {

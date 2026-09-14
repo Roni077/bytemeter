@@ -105,7 +105,7 @@ class ReadyStepView extends StatelessWidget {
                     iconColor: colorScheme.tertiary,
                     title: 'Speed Display Format',
                     subtitle:
-                        '${state.speedUnitType.name.toUpperCase()} · ${state.metricBase.name.toUpperCase()}',
+                        '${state.speedUnitType.displayName} · ${state.metricBase.displayName}',
                   ),
                 ],
               ),

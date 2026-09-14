@@ -163,7 +163,7 @@ class _ConversionPlaygroundCardState extends State<ConversionPlaygroundCard> {
 
                   const Divider(height: 20),
 
-                  // Speed Rate Comparison
+                  // Speed Rate Comparison (Bits per second & Bytes per second)
                   Row(
                     children: [
                       Expanded(
@@ -171,9 +171,9 @@ class _ConversionPlaygroundCardState extends State<ConversionPlaygroundCard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Speed (Bytes/s)',
+                              'Speed (Bits per second)',
                               style: theme.textTheme.labelMedium?.copyWith(
-                                color: widget.currentSpeedUnitType == SpeedUnitType.bytes
+                                color: widget.currentSpeedUnitType == SpeedUnitType.bits
                                     ? colorScheme.primary
                                     : colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w700,
@@ -181,10 +181,10 @@ class _ConversionPlaygroundCardState extends State<ConversionPlaygroundCard> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              speedBytes,
+                              speedBits,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: widget.currentSpeedUnitType == SpeedUnitType.bytes
+                                color: widget.currentSpeedUnitType == SpeedUnitType.bits
                                     ? colorScheme.primary
                                     : colorScheme.onSurface,
                               ),
@@ -203,9 +203,9 @@ class _ConversionPlaygroundCardState extends State<ConversionPlaygroundCard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Speed (Bits/s)',
+                              'Speed (Bytes per second)',
                               style: theme.textTheme.labelMedium?.copyWith(
-                                color: widget.currentSpeedUnitType == SpeedUnitType.bits
+                                color: widget.currentSpeedUnitType == SpeedUnitType.bytes
                                     ? colorScheme.primary
                                     : colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w700,
@@ -213,10 +213,10 @@ class _ConversionPlaygroundCardState extends State<ConversionPlaygroundCard> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              speedBits,
+                              speedBytes,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: widget.currentSpeedUnitType == SpeedUnitType.bits
+                                color: widget.currentSpeedUnitType == SpeedUnitType.bytes
                                     ? colorScheme.primary
                                     : colorScheme.onSurface,
                               ),

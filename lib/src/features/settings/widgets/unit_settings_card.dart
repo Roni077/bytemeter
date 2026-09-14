@@ -57,7 +57,7 @@ class UnitSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // 1. Speed Unit Format (Bits vs Bytes)
+            // 1. Speed Unit Format (Bits per second & Bytes per second)
             Text(
               'Speed Unit Format',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -66,7 +66,7 @@ class UnitSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Select whether live speed is displayed in Bytes/s or Bits/s.',
+              'Select whether live speed is displayed in Bits per second or Bytes per second.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -77,14 +77,14 @@ class UnitSettingsCard extends StatelessWidget {
               child: SegmentedButton<SpeedUnitType>(
                 segments: const [
                   ButtonSegment<SpeedUnitType>(
-                    value: SpeedUnitType.bytes,
-                    label: Text('Bytes (MB/s, kB/s)'),
-                    icon: Icon(Icons.storage_rounded, size: 16),
+                    value: SpeedUnitType.bits,
+                    label: Text('Bits per second'),
+                    icon: Icon(Icons.speed_rounded, size: 16),
                   ),
                   ButtonSegment<SpeedUnitType>(
-                    value: SpeedUnitType.bits,
-                    label: Text('Bits (Mbps, kbps)'),
-                    icon: Icon(Icons.speed_rounded, size: 16),
+                    value: SpeedUnitType.bytes,
+                    label: Text('Bytes per second'),
+                    icon: Icon(Icons.storage_rounded, size: 16),
                   ),
                 ],
                 selected: {speedUnitType},
@@ -92,6 +92,16 @@ class UnitSettingsCard extends StatelessWidget {
                   AppHaptics.selectionTick();
                   onSpeedUnitChanged(selected.first);
                 },
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              speedUnitType == SpeedUnitType.bits
+                  ? 'Active scale: ${SpeedUnitType.bits.unitSymbols} (Telecom & ISP standard)'
+                  : 'Active scale: ${SpeedUnitType.bytes.unitSymbols} (OS & download standard)',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w500,
               ),
             ),
 

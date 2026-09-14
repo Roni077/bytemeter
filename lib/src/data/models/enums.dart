@@ -64,14 +64,15 @@ enum NotificationIconStyle {
   final String displayName;
 }
 
-/// Speed unit formatting representation (Bytes vs Bits).
+/// Speed unit formatting representation (strictly Bits per second & Bytes per second).
 enum SpeedUnitType {
-  bytes('Bytes (MB/s)'),
-  bits('Bits (Mbps)');
+  bits('Bits per second', 'bps, kbps, Mbps, Gbps'),
+  bytes('Bytes per second', 'B/s, kB/s, MB/s, GB/s');
 
-  const SpeedUnitType(this.displayName);
+  const SpeedUnitType(this.displayName, this.unitSymbols);
 
   final String displayName;
+  final String unitSymbols;
 }
 
 /// Magnitude calculation base (Decimal 1000 vs Binary 1024).

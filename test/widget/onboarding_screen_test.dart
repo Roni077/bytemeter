@@ -163,6 +163,8 @@ void main() {
 
       expect(find.text('Quick Preferences'), findsOneWidget);
       expect(find.text('SPEED UNIT DISPLAY'), findsOneWidget);
+      expect(find.text('Bits per second'), findsOneWidget);
+      expect(find.text('Bytes per second'), findsOneWidget);
       expect(find.text('METRIC UNIT BASE'), findsOneWidget);
       expect(find.text('Persistent Speed Meter'), findsOneWidget);
 
