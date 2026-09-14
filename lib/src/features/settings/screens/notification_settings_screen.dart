@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/core_providers.dart';
+import '../../../core/utils/data_size.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../data/models/enums.dart';
 import '../settings_controller.dart';
@@ -140,7 +142,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          _buildNotificationPreviewCard(context, theme, colorScheme),
+          const _NotificationPreviewCard(),
 
           const SizedBox(height: 16),
 
@@ -369,12 +371,42 @@ class NotificationSettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildNotificationPreviewCard(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+class _NotificationPreviewCard extends ConsumerWidget {
+  const _NotificationPreviewCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final speedSnapshot = ref.watch(speedStreamProvider).valueOrNull;
+    final todayTotalsAsync = ref.watch(todayNetworkTotalsProvider);
+    final todayTotals = todayTotalsAsync.valueOrNull;
+    final prefsRepo = ref.watch(preferencesRepositoryProvider);
+    final prefs = prefsRepo.current;
+
+    final downStr = DataSize(speedSnapshot?.downloadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final upStr = DataSize(speedSnapshot?.uploadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final mobileStr = DataSize(todayTotals?.mobileBytes ?? 0).format(
+      base: prefs.metricBase,
+      decimals: 1,
+    );
+    final wifiStr = DataSize(todayTotals?.wifiBytes ?? 0).format(
+      base: prefs.metricBase,
+      decimals: 1,
+    );
+
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
@@ -432,17 +464,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            // Section Title
-            const Text(
-              'Internet Speed Meter',
-              style: TextStyle(
-                color: Color(0xFFE0E3EB),
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             // 4-Column Metric Grid
             Row(
               children: [
@@ -450,25 +472,25 @@ class NotificationSettingsScreen extends ConsumerWidget {
                   icon: Icons.arrow_downward_rounded,
                   iconColor: const Color(0xFF00E5FF),
                   label: 'Down',
-                  value: '12 KB/s',
+                  value: downStr,
                 ),
                 _buildMetricColumn(
                   icon: Icons.arrow_upward_rounded,
                   iconColor: const Color(0xFF536DFE),
                   label: 'Up',
-                  value: '812 B/s',
+                  value: upStr,
                 ),
                 _buildMetricColumn(
                   icon: Icons.signal_cellular_alt_rounded,
                   iconColor: const Color(0xFF42A5F5),
                   label: 'Mobile',
-                  value: '0.5 MB',
+                  value: mobileStr,
                 ),
                 _buildMetricColumn(
                   icon: Icons.wifi_rounded,
                   iconColor: const Color(0xFF29B6F6),
                   label: 'WiFi',
-                  value: '0 MB',
+                  value: wifiStr,
                 ),
               ],
             ),
@@ -503,7 +525,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetricColumn({
+  static Widget _buildMetricColumn({
     required IconData icon,
     required Color iconColor,
     required String label,

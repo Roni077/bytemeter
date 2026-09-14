@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/data_plans_dao.dart';
+import '../../data/models/enums.dart';
 import '../../data/models/traffic_snapshot.dart';
 import '../../data/repositories/data_plan_repository.dart';
 import '../../data/repositories/network_usage_repository.dart';
@@ -73,3 +74,22 @@ final dataPlanRepositoryProvider = Provider<DataPlanRepository>((ref) {
   final bridge = ref.watch(nativeTrafficBridgeProvider);
   return DataPlanRepository(dao: dao, bridge: bridge);
 });
+
+/// Record storing today's aggregated cellular and Wi-Fi byte consumption.
+typedef TodayNetworkTotals = ({int mobileBytes, int wifiBytes});
+
+/// Reactive asynchronous provider fetching today's real mobile and Wi-Fi data usage totals.
+final todayNetworkTotalsProvider = FutureProvider.autoDispose<TodayNetworkTotals>((ref) async {
+  final repo = ref.watch(networkUsageRepositoryProvider);
+  final hasPerm = await repo.hasUsagePermission();
+  if (!hasPerm) {
+    return (mobileBytes: 0, wifiBytes: 0);
+  }
+  final now = DateTime.now();
+  final results = await Future.wait([
+    repo.getTodayUsage(networkType: NetworkType.mobile, now: now),
+    repo.getTodayUsage(networkType: NetworkType.wifi, now: now),
+  ]);
+  return (mobileBytes: results[0].totalBytes, wifiBytes: results[1].totalBytes);
+});
+

@@ -152,7 +152,7 @@ void main() {
 
       // Verify Notification Shade Panel preview
       expect(find.text('Notification Shade Panel'), findsOneWidget);
-      expect(find.text('Internet Speed Meter'), findsOneWidget);
+      expect(find.text('Internet Speed Meter'), findsNothing);
       expect(find.text('Down'), findsOneWidget);
       expect(find.text('Up'), findsOneWidget);
       expect(find.text('Mobile'), findsOneWidget);

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/core_providers.dart';
+import '../../../core/utils/data_size.dart';
 import '../../../core/utils/haptics.dart';
 import '../onboarding_controller.dart';
 import '../onboarding_state.dart';
 
 /// Step 3: Dedicated onboarding screen for Android Notification permission.
-class NotificationPermissionStepView extends StatelessWidget {
+class NotificationPermissionStepView extends ConsumerWidget {
   const NotificationPermissionStepView({
     super.key,
     required this.state,
@@ -15,10 +18,36 @@ class NotificationPermissionStepView extends StatelessWidget {
   final OnboardingController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isGranted = state.hasNotificationPermission;
+    final speedSnapshot = ref.watch(speedStreamProvider).valueOrNull;
+    final todayTotalsAsync = ref.watch(todayNetworkTotalsProvider);
+    final todayTotals = todayTotalsAsync.valueOrNull;
+    final prefsRepo = ref.watch(preferencesRepositoryProvider);
+    final prefs = prefsRepo.current;
+
+    final downStr = DataSize(speedSnapshot?.downloadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final upStr = DataSize(speedSnapshot?.uploadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final mobileStr = DataSize(todayTotals?.mobileBytes ?? 0).format(
+      base: prefs.metricBase,
+      decimals: 1,
+    );
+    final wifiStr = DataSize(todayTotals?.wifiBytes ?? 0).format(
+      base: prefs.metricBase,
+      decimals: 1,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -162,7 +191,7 @@ class NotificationPermissionStepView extends StatelessWidget {
                               size: 14, color: colorScheme.onPrimaryContainer),
                           const SizedBox(width: 4),
                           Text(
-                            '4.8 MB/s',
+                            downStr,
                             style: theme.textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onPrimaryContainer,
@@ -187,7 +216,7 @@ class NotificationPermissionStepView extends StatelessWidget {
                               size: 14, color: colorScheme.onTertiaryContainer),
                           const SizedBox(width: 4),
                           Text(
-                            '512 KB/s',
+                            upStr,
                             style: theme.textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onTertiaryContainer,
@@ -200,7 +229,7 @@ class NotificationPermissionStepView extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Today: 1.25 GB Cellular · 4.80 GB Wi-Fi',
+                  'Today: $mobileStr Cellular · $wifiStr Wi-Fi',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontSize: 11,

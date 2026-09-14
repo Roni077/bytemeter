@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/color_schemes.dart';
+import '../../../core/utils/data_size.dart';
 import '../../../data/models/enums.dart';
 
 /// Interactive live preview card visually showing how the app's components,
 /// colors, typography, buttons, and elevation appear under the selected theme mode.
-class LiveThemePreviewCard extends StatelessWidget {
+class LiveThemePreviewCard extends ConsumerWidget {
   const LiveThemePreviewCard({
     super.key,
     required this.selectedMode,
@@ -13,9 +16,31 @@ class LiveThemePreviewCard extends StatelessWidget {
   final ThemeModePreference selectedMode;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final speedSnapshot = ref.watch(speedStreamProvider).valueOrNull;
+    final prefsRepo = ref.watch(preferencesRepositoryProvider);
+    final prefs = prefsRepo.current;
+
+    final totalSpeedFormatted = DataSize(speedSnapshot?.totalBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final uploadSpeedFormatted = DataSize(speedSnapshot?.uploadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
+    final downloadSpeedFormatted = DataSize(speedSnapshot?.downloadBytesPerSec ?? 0).format(
+      base: prefs.metricBase,
+      unitType: prefs.speedUnitType,
+      isRate: true,
+      decimals: 1,
+    );
 
     return Card(
       elevation: 0,
@@ -105,7 +130,7 @@ class LiveThemePreviewCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '42.8 MB/s',
+                        totalSpeedFormatted,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w900,
                           color: colorScheme.primary,
@@ -135,7 +160,7 @@ class LiveThemePreviewCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '12.4 MB/s',
+                                uploadSpeedFormatted,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: AppColorSchemes.uploadColor,
@@ -163,7 +188,7 @@ class LiveThemePreviewCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '30.4 MB/s',
+                                downloadSpeedFormatted,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: AppColorSchemes.downloadColor,
