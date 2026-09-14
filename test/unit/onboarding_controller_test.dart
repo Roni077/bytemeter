@@ -177,6 +177,7 @@ void main() {
 
     test('completeOnboarding sets hasCompletedOnboarding flag and starts service if authorized', () async {
       bridge.usageGranted = true;
+      bridge.notifGranted = true;
       final controller = OnboardingController(bridge: bridge, prefsRepo: prefsRepo);
       await controller.refreshPermissionStatuses();
 

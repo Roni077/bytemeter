@@ -234,6 +234,7 @@ void main() {
     test('ensureServiceRunningIfAllowed respects missing permission or disabled setting', () async {
       // 1. Missing permission
       bridge.hasPermission = false;
+      bridge.notifPermission = false;
       bridge.serviceRunning = false;
 
       final controller = SettingsController(prefsRepo: prefsRepo, bridge: bridge);
