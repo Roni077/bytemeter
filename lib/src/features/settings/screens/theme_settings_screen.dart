@@ -39,7 +39,9 @@ class ThemeSettingsScreen extends ConsumerWidget {
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
-          top: MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
+          top: prefs.enableBlur
+              ? (MediaQuery.paddingOf(context).top + kToolbarHeight + 8)
+              : 12,
           bottom: MediaQuery.paddingOf(context).bottom + 24,
         ),
         children: [
@@ -48,7 +50,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
             selectedMode: prefs.themeMode,
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // 2. Theme Mode Grid Selector
           ThemeModeSelector(
@@ -56,7 +58,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
             onModeSelected: (mode) => controller.setThemeMode(mode),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // 3. Frosted Glass Blur (Haze) Switch Card
           Card(
@@ -93,7 +95,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // 4. AMOLED Display Energy Efficiency Info
           Container(

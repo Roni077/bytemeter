@@ -102,20 +102,39 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Live Theme Preview'), findsOneWidget);
+      expect(find.text('Theme Mode'), findsOneWidget);
+      expect(find.text('Primary'), findsOneWidget);
+      expect(find.text('Secondary'), findsOneWidget);
+
+      // Verify all 4 theme mode options exist
+      expect(find.text('Auto System'), findsOneWidget);
+      expect(find.text('Light Material'), findsOneWidget);
+      expect(find.text('Dark Material'), findsOneWidget);
+      expect(find.text('AMOLED Black'), findsOneWidget);
 
       // Tap AMOLED Black
       final amoledTile = find.text('AMOLED Black');
-      expect(amoledTile, findsOneWidget);
       await tester.tap(amoledTile);
       await tester.pumpAndSettle();
       expect(prefsRepo.current.themeMode, equals(ThemeModePreference.amoled));
 
       // Tap Light Material
       final lightTile = find.text('Light Material');
-      expect(lightTile, findsOneWidget);
       await tester.tap(lightTile);
       await tester.pumpAndSettle();
       expect(prefsRepo.current.themeMode, equals(ThemeModePreference.light));
+
+      // Tap Dark Material
+      final darkTile = find.text('Dark Material');
+      await tester.tap(darkTile);
+      await tester.pumpAndSettle();
+      expect(prefsRepo.current.themeMode, equals(ThemeModePreference.dark));
+
+      // Tap Auto System
+      final autoTile = find.text('Auto System');
+      await tester.tap(autoTile);
+      await tester.pumpAndSettle();
+      expect(prefsRepo.current.themeMode, equals(ThemeModePreference.auto));
 
       // Toggle blur
       final blurSwitch = find.byType(Switch).first;

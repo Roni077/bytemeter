@@ -177,40 +177,45 @@ class LiveThemePreviewCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Action Buttons Demo
+                  // Semantic Theme Palette Swatches Demo
                   Row(
                     children: [
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {},
-                          style: FilledButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text('Filled Button'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton.tonal(
-                          onPressed: () {},
-                          style: FilledButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text('Tonal Button'),
-                        ),
-                      ),
+                      _buildPaletteChip('Primary', colorScheme.primary, colorScheme.onPrimary),
+                      const SizedBox(width: 6),
+                      _buildPaletteChip('Secondary', colorScheme.secondary, colorScheme.onSecondary),
+                      const SizedBox(width: 6),
+                      _buildPaletteChip('Tertiary', colorScheme.tertiary, colorScheme.onTertiary),
+                      const SizedBox(width: 6),
+                      _buildPaletteChip('Container', colorScheme.primaryContainer, colorScheme.onPrimaryContainer),
                     ],
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaletteChip(String label, Color bg, Color fg) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            color: fg,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
