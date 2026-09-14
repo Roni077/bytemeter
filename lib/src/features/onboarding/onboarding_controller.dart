@@ -127,7 +127,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     state = state.copyWith(isCompleting: true);
     await prefsRepo.setHasCompletedOnboarding(true);
 
-    if (state.persistentNotificationEnabled && state.hasUsagePermission) {
+    if (state.persistentNotificationEnabled && state.hasNotificationPermission) {
       await bridge.startForegroundService();
     }
     state = state.copyWith(isCompleting: false);

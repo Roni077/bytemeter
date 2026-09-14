@@ -169,8 +169,8 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Hairline Divider -->
-    <View
+    <!-- Hairline Divider (TextView used because bare <View> is not a @RemoteView) -->
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#222836"

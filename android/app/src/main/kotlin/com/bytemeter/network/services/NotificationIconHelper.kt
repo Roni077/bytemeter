@@ -84,7 +84,7 @@ class NotificationIconHelper(private val context: Context) {
             targetCanvas.drawText(speed, 48f * multiplier, 54f * multiplier, paintValue)
             targetCanvas.drawText(unit, 48f * multiplier, 94f * multiplier, paintUnit)
 
-            val icon = IconCompat.createWithBitmap(targetBitmap)
+            val icon = IconCompat.createWithBitmap(targetBitmap.copy(Bitmap.Config.ARGB_8888, false))
             lastSpeed = speed
             lastUnit = unit
             cachedIcon = icon
@@ -109,7 +109,7 @@ class NotificationIconHelper(private val context: Context) {
             targetCanvas.drawText(str1, 96f * multiplier, 48f * multiplier, paintSeparate)
             targetCanvas.drawText(str2, 96f * multiplier, 96f * multiplier, paintSeparate)
 
-            val icon = IconCompat.createWithBitmap(targetBitmap)
+            val icon = IconCompat.createWithBitmap(targetBitmap.copy(Bitmap.Config.ARGB_8888, false))
             lastSpeed1 = speed1
             lastSpeed2 = speed2
             cachedSeparateIcon = icon

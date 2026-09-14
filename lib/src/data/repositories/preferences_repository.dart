@@ -188,8 +188,8 @@ class PreferencesRepository {
       if (bridge == null) return false;
       if (!_currentPreferences.persistentNotificationEnabled) return false;
 
-      final hasUsage = await bridge.hasUsagePermission();
-      if (!hasUsage) return false;
+      final hasNotif = await bridge.hasNotificationPermission();
+      if (!hasNotif) return false;
 
       final isRunning = await bridge.isServiceRunning();
       if (!isRunning) {
