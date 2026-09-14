@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/special_uids.dart';
 import '../../../core/utils/haptics.dart';
+import '../../../core/widgets/app_icon_avatar.dart';
 import '../../../data/models/app_info.dart';
 
 /// Priority package prefixes for heavy streaming and social media applications.
@@ -123,49 +123,6 @@ class _AppSearchModalState extends State<AppSearchModal> {
     }).toList();
   }
 
-  Widget _buildAppIcon(AppInfo app, ColorScheme colorScheme) {
-    if (app.iconBytes != null && app.iconBytes!.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.memory(
-          app.iconBytes!,
-          width: 40,
-          height: 40,
-          cacheWidth: 120,
-          cacheHeight: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(app, colorScheme),
-        ),
-      );
-    }
-    return _buildFallbackIcon(app, colorScheme);
-  }
-
-  Widget _buildFallbackIcon(AppInfo app, ColorScheme colorScheme) {
-    IconData iconData = Icons.android_rounded;
-    Color iconColor = colorScheme.primary;
-
-    if (app.uid == SpecialUids.uidTethering) {
-      iconData = Icons.wifi_tethering_rounded;
-      iconColor = colorScheme.secondary;
-    } else if (app.uid == SpecialUids.uidRemoved) {
-      iconData = Icons.delete_sweep_rounded;
-      iconColor = colorScheme.error;
-    } else if (app.uid == SpecialUids.uidOtherUsers) {
-      iconData = Icons.devices_other_rounded;
-      iconColor = colorScheme.tertiary;
-    }
-
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: iconColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(iconData, color: iconColor, size: 22),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +242,7 @@ class _AppSearchModalState extends State<AppSearchModal> {
 
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  leading: _buildAppIcon(app, colorScheme),
+                  leading: AppIconAvatar.fromAppInfo(app: app, size: 40),
                   title: Text(
                     app.label,
                     maxLines: 1,

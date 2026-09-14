@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 import '../../core/constants/special_uids.dart';
 import '../../core/native/native_traffic_bridge.dart';
 import '../../core/utils/date_utils.dart';
@@ -15,25 +16,87 @@ class NetworkUsageRepository {
 
   final NativeTrafficBridge _bridge;
 
-  // In-memory cache of installed apps by UID
+  // In-memory cache of installed apps by UID and package
   final Map<int, AppInfo> _appCache = <int, AppInfo>{};
+  final Map<String, AppInfo> _packageAppCache = <String, AppInfo>{};
+  final Map<String, Uint8List> _iconCache = <String, Uint8List>{};
+  final Map<String, Future<Uint8List?>> _inFlightIconLoads = <String, Future<Uint8List?>>{};
   final Set<String> _failedIconPackages = <String>{};
+  List<AppInfo> _installedAppsList = const <AppInfo>[];
   bool _appsLoaded = false;
+
+  /// Synchronously returns cached icon bytes for a package name if available.
+  Uint8List? getCachedAppIcon(String packageName) => _iconCache[packageName];
+
+  /// Asynchronously fetches an app launcher icon with deduplication and in-memory caching.
+  Future<Uint8List?> getAppIcon(String packageName) async {
+    if (packageName.isEmpty ||
+        packageName.startsWith('system.') ||
+        packageName.startsWith('uid_')) {
+      return null;
+    }
+
+    if (_iconCache.containsKey(packageName)) {
+      return _iconCache[packageName];
+    }
+
+    if (_failedIconPackages.contains(packageName)) {
+      return null;
+    }
+
+    if (_inFlightIconLoads.containsKey(packageName)) {
+      return await _inFlightIconLoads[packageName];
+    }
+
+    final loadFuture = _bridge.getAppIcon(packageName);
+    _inFlightIconLoads[packageName] = loadFuture;
+
+    try {
+      final bytes = await loadFuture;
+      if (bytes != null && bytes.isNotEmpty) {
+        _iconCache[packageName] = bytes;
+        if (_packageAppCache.containsKey(packageName)) {
+          _packageAppCache[packageName] = _packageAppCache[packageName]!.copyWith(iconBytes: bytes);
+        }
+        for (final entry in _appCache.entries) {
+          if (entry.value.packageName == packageName) {
+            _appCache[entry.key] = entry.value.copyWith(iconBytes: bytes);
+          }
+        }
+        return bytes;
+      } else {
+        _failedIconPackages.add(packageName);
+        return null;
+      }
+    } catch (_) {
+      _failedIconPackages.add(packageName);
+      return null;
+    } finally {
+      _inFlightIconLoads.remove(packageName);
+    }
+  }
 
   /// Fetches all installed apps, caching them in-memory.
   Future<List<AppInfo>> getInstalledApps({bool refresh = false}) async {
-    if (_appsLoaded && !refresh && _appCache.isNotEmpty) {
-      return _appCache.values.toList(growable: false);
+    if (_appsLoaded && !refresh && _installedAppsList.isNotEmpty) {
+      return _installedAppsList;
     }
 
     final apps = await _bridge.getInstalledApps();
     _appCache.clear();
+    _packageAppCache.clear();
     _failedIconPackages.clear();
+    final enrichedApps = <AppInfo>[];
     for (final app in apps) {
-      _appCache[app.uid] = app;
+      final cachedIcon = _iconCache[app.packageName];
+      final enriched = cachedIcon != null ? app.copyWith(iconBytes: cachedIcon) : app;
+      _appCache[app.uid] = enriched;
+      _packageAppCache[app.packageName] = enriched;
+      enrichedApps.add(enriched);
     }
+    _installedAppsList = List<AppInfo>.unmodifiable(enrichedApps);
     _appsLoaded = true;
-    return apps;
+    return _installedAppsList;
   }
 
   /// Retrieves cached app info for a specific UID, or generates a fallback descriptor.
@@ -44,18 +107,18 @@ class NetworkUsageRepository {
 
     if (_appCache.containsKey(uid)) {
       var app = _appCache[uid]!;
+      if (app.iconBytes == null && _iconCache.containsKey(app.packageName)) {
+        app = app.copyWith(iconBytes: _iconCache[app.packageName]);
+        _appCache[uid] = app;
+      }
       if (loadIcon &&
           app.iconBytes == null &&
           !app.isSpecial &&
           app.packageName.isNotEmpty &&
-          !app.packageName.startsWith('uid_') &&
-          !_failedIconPackages.contains(app.packageName)) {
-        final icon = await _bridge.getAppIcon(app.packageName);
+          !app.packageName.startsWith('uid_')) {
+        final icon = await getAppIcon(app.packageName);
         if (icon != null) {
           app = app.copyWith(iconBytes: icon);
-          _appCache[uid] = app;
-        } else {
-          _failedIconPackages.add(app.packageName);
         }
       }
       return app;

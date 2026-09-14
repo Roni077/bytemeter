@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/utils/haptics.dart';
+import '../../../core/widgets/app_icon_avatar.dart';
 import '../../../data/models/app_info.dart';
 
 /// Modal bottom sheet allowing users to select zero-rated / carrier-free apps
@@ -189,27 +190,10 @@ class _ExcludedAppsSheetState extends State<ExcludedAppsSheet> {
                       return CheckboxListTile(
                         value: isSelected,
                         onChanged: (_) => _toggleApp(app.uid),
-                        secondary: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          alignment: Alignment.center,
-                          child: (app.iconBytes != null && app.iconBytes!.isNotEmpty)
-                              ? Image.memory(
-                                  app.iconBytes!,
-                                  width: 32,
-                                  height: 32,
-                                  cacheWidth: 96,
-                                  cacheHeight: 96,
-                                )
-                              : Icon(
-                                  Icons.android_rounded,
-                                  color: colorScheme.primary,
-                                  size: 24,
-                                ),
+                        secondary: AppIconAvatar.fromAppInfo(
+                          app: app,
+                          size: 40,
+                          backgroundColor: colorScheme.surfaceContainerHighest,
                         ),
                         title: Text(
                           app.label,

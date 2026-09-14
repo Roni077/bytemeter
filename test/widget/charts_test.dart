@@ -7,18 +7,21 @@ import 'package:bytemeter/src/features/home/widgets/hero_geometric_gauge.dart';
 import 'package:bytemeter/src/features/charts/weekly_bar_chart.dart';
 import 'package:bytemeter/src/features/charts/scrollable_bar_chart.dart';
 import 'package:bytemeter/src/features/charts/comparative_line_chart.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bytemeter/src/features/charts/app_usage_bar_chart.dart';
 import 'package:bytemeter/src/features/charts/extra_pack_progress_chart.dart';
 
 void main() {
   Widget buildTestApp(Widget child, [ThemeModePreference pref = ThemeModePreference.light]) {
-    return MaterialApp(
-      theme: AppTheme.buildTheme(
-        preference: pref,
-        platformBrightness: Brightness.light,
-      ),
-      home: Scaffold(
-        body: Center(child: child),
+    return ProviderScope(
+      child: MaterialApp(
+        theme: AppTheme.buildTheme(
+          preference: pref,
+          platformBrightness: Brightness.light,
+        ),
+        home: Scaffold(
+          body: Center(child: child),
+        ),
       ),
     );
   }

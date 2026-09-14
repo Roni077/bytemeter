@@ -251,20 +251,25 @@ void main() {
     AppInfo? selectedApp;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                selectedApp = await AppSearchModal.show(
-                  context: context,
-                  installedApps: const [
-                    AppInfo(uid: 10001, packageName: 'com.google.android.youtube', label: 'YouTube'),
-                    AppInfo(uid: 10002, packageName: 'com.whatsapp', label: 'WhatsApp'),
-                  ],
-                );
-              },
-              child: const Text('Open Modal'),
+      ProviderScope(
+        overrides: [
+          networkUsageRepositoryProvider.overrideWithValue(usageRepo),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  selectedApp = await AppSearchModal.show(
+                    context: context,
+                    installedApps: const [
+                      AppInfo(uid: 10001, packageName: 'com.google.android.youtube', label: 'YouTube'),
+                      AppInfo(uid: 10002, packageName: 'com.whatsapp', label: 'WhatsApp'),
+                    ],
+                  );
+                },
+                child: const Text('Open Modal'),
+              ),
             ),
           ),
         ),

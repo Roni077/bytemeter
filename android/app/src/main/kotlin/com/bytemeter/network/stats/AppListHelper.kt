@@ -21,9 +21,9 @@ import java.io.ByteArrayOutputStream
 
 class AppListHelper(private val context: Context) {
     private val packageManager: PackageManager = context.packageManager
-    private val iconCache = android.util.LruCache<String, ByteArray>(128)
+    private val iconCache = android.util.LruCache<String, ByteArray>(256)
     private val failedPackages = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
-    private val iconSemaphore = Semaphore(2)
+    private val iconSemaphore = Semaphore(6)
 
     suspend fun getInstalledApps(): List<Map<String, Any?>> = withContext(Dispatchers.IO) {
         val installedApps = try {
@@ -38,7 +38,7 @@ class AppListHelper(private val context: Context) {
             emptyList<ApplicationInfo>()
         }
 
-        val appList = installedApps.distinctBy { it.uid }.map { appInfo ->
+        val appList = installedApps.map { appInfo ->
             val label = try {
                 appInfo.loadLabel(packageManager).toString()
             } catch (e: Exception) {
@@ -52,7 +52,7 @@ class AppListHelper(private val context: Context) {
                 "iconBytes" to null,
                 "isSpecial" to false
             )
-        }.toMutableList()
+        }.distinctBy { it["packageName"] }.toMutableList()
 
         val specialApps = listOf(
             mapOf("uid" to NetworkStatsHelper.UID_ALL, "packageName" to "system.all_apps", "label" to "All Apps", "iconBytes" to null, "isSpecial" to true),
@@ -78,27 +78,16 @@ class AppListHelper(private val context: Context) {
             iconCache.get(packageName)?.let { return@withPermit it }
 
             try {
-                val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
-                } else {
-                    @Suppress("DEPRECATION")
-                    packageManager.getApplicationInfo(packageName, 0)
-                }
-
-                val drawable: Drawable = if (appInfo.icon != 0) {
-                    try {
-                        val resources = packageManager.getResourcesForApplication(appInfo)
-                        ResourcesCompat.getDrawable(resources, appInfo.icon, null)
-                            ?: appInfo.loadIcon(packageManager)
-                    } catch (_: Exception) {
-                        try {
-                            appInfo.loadIcon(packageManager)
-                        } catch (_: Exception) {
-                            packageManager.defaultActivityIcon
-                        }
+                val drawable: Drawable = try {
+                    packageManager.getApplicationIcon(packageName)
+                } catch (_: Exception) {
+                    val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        packageManager.getApplicationInfo(packageName, 0)
                     }
-                } else {
-                    packageManager.defaultActivityIcon
+                    appInfo.loadIcon(packageManager)
                 }
 
                 val bytes = drawableToPngByteArray(drawable)
@@ -133,30 +122,15 @@ class AppListHelper(private val context: Context) {
 
     private fun drawableToPngByteArray(drawable: Drawable): ByteArray? {
         return try {
-            val targetSize = 96
-            val (bitmap, shouldRecycle) = when (drawable) {
-                is BitmapDrawable -> {
-                    val orig = drawable.bitmap
-                    if (orig.width > targetSize || orig.height > targetSize) {
-                        Pair(Bitmap.createScaledBitmap(orig, targetSize, targetSize, true), true)
-                    } else {
-                        Pair(orig, false)
-                    }
-                }
-                else -> {
-                    val bmp = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(bmp)
-                    drawable.setBounds(0, 0, targetSize, targetSize)
-                    drawable.draw(canvas)
-                    Pair(bmp, true)
-                }
-            }
+            val targetSize = 128
+            val bmp = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
 
             val stream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            if (shouldRecycle && !bitmap.isRecycled) {
-                bitmap.recycle()
-            }
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            bmp.recycle()
             stream.toByteArray()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to convert drawable to PNG", e)

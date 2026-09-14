@@ -174,9 +174,16 @@ class ByteMeterPlatformBridge(
             ChannelConstants.GET_APP_ICON -> {
                 val packageName = call.argument<String>("packageName") ?: ""
                 scope.launch {
-                    val iconBytes = appListHelper.getAppIcon(packageName)
-                    withContext(Dispatchers.Main) {
-                        result.success(iconBytes)
+                    try {
+                        val iconBytes = appListHelper.getAppIcon(packageName)
+                        withContext(Dispatchers.Main) {
+                            result.success(iconBytes)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error fetching icon for $packageName", e)
+                        withContext(Dispatchers.Main) {
+                            result.success(null)
+                        }
                     }
                 }
             }

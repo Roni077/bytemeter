@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:bytemeter/src/core/utils/data_size.dart';
 import 'package:bytemeter/src/core/utils/size_measurer.dart';
+import 'package:bytemeter/src/core/widgets/app_icon_avatar.dart';
 
 /// Single app item data entry for [AppUsageBarChart].
 class AppUsageBarData {
@@ -109,35 +110,15 @@ class _AppUsageRow extends StatelessWidget {
             Row(
               children: [
                 // App Icon / Silhouette
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: app.iconBytes != null && app.iconBytes!.isNotEmpty
-                        ? Image.memory(
-                            app.iconBytes!,
-                            width: 24,
-                            height: 24,
-                            cacheWidth: 72,
-                            cacheHeight: 72,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.android_rounded,
-                              size: 16,
-                              color: colorScheme.primary,
-                            ),
-                          )
-                        : Icon(
-                            Icons.android_rounded,
-                            size: 16,
-                            color: colorScheme.primary,
-                          ),
-                  ),
+                AppIconAvatar(
+                  uid: app.uid,
+                  packageName: app.packageName,
+                  label: app.appName,
+                  iconBytes: app.iconBytes,
+                  size: 24,
+                  borderRadius: BorderRadius.circular(6),
+                  iconSize: 14,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                 ),
                 const SizedBox(width: 8),
 
