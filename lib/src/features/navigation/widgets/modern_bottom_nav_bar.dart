@@ -2,9 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/core_providers.dart';
-import '../../../core/theme/color_schemes.dart';
 import '../../../core/utils/haptics.dart';
-import '../../../data/models/enums.dart';
 
 /// Item descriptor defining icons, label, and semantics for navigation destinations.
 class ModernNavItemData {
@@ -71,36 +69,30 @@ class ModernBottomNavBar extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final prefs = ref.watch(preferencesRepositoryProvider).current;
-    final isAmoled = prefs.themeMode == ThemeModePreference.amoled;
     final enableBlur = prefs.enableBlur;
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
-    // Background color determination based on theme & blur preferences
-    final Color barBackground;
-    if (!enableBlur) {
-      barBackground = isAmoled
-          ? AppColorSchemes.amoledSurfaceContainer
-          : colorScheme.surfaceContainer;
-    } else {
-      if (isAmoled) {
-        barBackground = AppColorSchemes.amoledSurfaceContainer.withValues(alpha: 0.88);
-      } else if (isDark) {
-        barBackground = colorScheme.surfaceContainer.withValues(alpha: 0.85);
-      } else {
-        barBackground = colorScheme.surface.withValues(alpha: 0.85);
-      }
-    }
+    // Background color determination based on theme & blur preferences.
+    // Relies directly on interpolated colorScheme to avoid frame-0 snapping on AMOLED transitions.
+    final Color baseSurface = enableBlur && !isDark
+        ? colorScheme.surface
+        : colorScheme.surfaceContainer;
+    final Color barBackground = enableBlur
+        ? baseSurface.withValues(alpha: isDark ? 0.88 : 0.85)
+        : baseSurface;
 
-    final borderColor = isAmoled
-        ? colorScheme.outlineVariant.withValues(alpha: 0.3)
-        : colorScheme.outlineVariant.withValues(alpha: isDark ? 0.25 : 0.45);
-
-    final shadowColor = Colors.black.withValues(
-      alpha: isAmoled ? 0.5 : (isDark ? 0.35 : 0.08),
+    final borderColor = colorScheme.outlineVariant.withValues(
+      alpha: isDark ? 0.25 : 0.45,
     );
 
-    final barContent = Container(
+    final shadowColor = Colors.black.withValues(
+      alpha: isDark ? 0.35 : 0.08,
+    );
+
+    final barContent = AnimatedContainer(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOutCubic,
       decoration: BoxDecoration(
         color: barBackground,
         borderRadius: BorderRadius.circular(32),
@@ -128,13 +120,13 @@ class ModernBottomNavBar extends ConsumerWidget {
                 top: (constraints.maxHeight - indicatorHeight) / 2,
                 width: indicatorWidth,
                 height: indicatorHeight,
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeInOutCubic,
                   decoration: BoxDecoration(
-                    color: isAmoled
-                        ? colorScheme.primaryContainer.withValues(alpha: 0.45)
-                        : colorScheme.primaryContainer.withValues(
-                            alpha: isDark ? 0.55 : 0.75,
-                          ),
+                    color: colorScheme.primaryContainer.withValues(
+                      alpha: isDark ? 0.55 : 0.75,
+                    ),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
                       color: colorScheme.primary.withValues(alpha: 0.15),
@@ -193,7 +185,9 @@ class ModernBottomNavBar extends ConsumerWidget {
       ),
     );
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOutCubic,
       margin: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding > 0 ? bottomPadding + 8 : 16),
       height: 66,
       decoration: BoxDecoration(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/providers/core_providers.dart';
 import 'core/utils/haptics.dart';
@@ -155,22 +156,33 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          for (int i = 0; i < 4; i++)
-            TickerMode(
-              enabled: i == _currentIndex,
-              child: _buildTab(i),
-            ),
-        ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
-      bottomNavigationBar: ModernBottomNavBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onTabSelected,
-        onDestinationReselected: _onTabReselected,
+      child: Scaffold(
+        extendBody: true,
+        body: IndexedStack(
+          index: _currentIndex,
+          children: [
+            for (int i = 0; i < 4; i++)
+              TickerMode(
+                enabled: i == _currentIndex,
+                child: _buildTab(i),
+              ),
+          ],
+        ),
+        bottomNavigationBar: ModernBottomNavBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: _onTabSelected,
+          onDestinationReselected: _onTabReselected,
+        ),
       ),
     );
   }

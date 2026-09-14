@@ -57,6 +57,8 @@ class ByteMeterApp extends ConsumerWidget {
           title: 'ByteMeter',
           debugShowCheckedModeBanner: false,
           theme: themeData,
+          themeAnimationDuration: const Duration(milliseconds: 350),
+          themeAnimationCurve: Curves.easeInOutCubic,
           home: hasCompletedOnboarding
               ? const AppScaffold()
               : const OnboardingScreen(),

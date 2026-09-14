@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:bytemeter/src/data/models/enums.dart';
 import 'color_schemes.dart';
 import 'typography.dart';
@@ -44,6 +45,15 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness:
+              brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: brightness,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness:
+              brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        ),
         titleTextStyle: textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
           fontWeight: FontWeight.w700,
@@ -93,12 +103,19 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: amoledScheme,
       textTheme: textTheme,
-      scaffoldBackgroundColor: AppColorSchemes.amoledBackground,
+      scaffoldBackgroundColor: amoledScheme.surface,
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
         titleTextStyle: textTheme.titleLarge?.copyWith(
           color: amoledScheme.onSurface,
           fontWeight: FontWeight.w700,
@@ -110,9 +127,14 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color: amoledScheme.outlineVariant.withValues(alpha: 0.2),
+            color: amoledScheme.outlineVariant.withValues(alpha: 0.3),
             width: 1,
           ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );

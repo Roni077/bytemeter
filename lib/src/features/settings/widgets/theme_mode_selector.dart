@@ -126,7 +126,8 @@ class ThemeModeSelector extends StatelessWidget {
                   },
                   borderRadius: BorderRadius.circular(14),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeInOutCubic,
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: isSelected
