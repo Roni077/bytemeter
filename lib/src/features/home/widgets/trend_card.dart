@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_dimens.dart';
 import '../../../core/utils/haptics.dart';
+import '../../../core/widgets/pressable_card.dart';
+import '../../../core/widgets/shimmer_box.dart';
 
 /// Card displaying the 7-day moving average trend percentage and burn rate indicator.
 class TrendCard extends StatelessWidget {
@@ -43,80 +46,62 @@ class TrendCard extends StatelessWidget {
       trendPrefix = '';
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row with Icon and Info Tooltip
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.tertiaryContainer.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.speed_rounded,
-                    size: 20,
-                    color: colorScheme.onTertiaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '7-DAY BURN RATE',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      letterSpacing: 1.1,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurfaceVariant,
+    return PressableCard(
+      onTap: () => _showTrendInfoDialog(context),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimens.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Row with Icon and Info Tooltip
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppDimens.sm),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiaryContainer.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.speed_rounded,
+                      size: 20,
+                      color: colorScheme.onTertiaryContainer,
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '7-DAY BURN RATE',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  Icon(
                     Icons.info_outline_rounded,
                     size: 18,
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 18,
-                  onPressed: () => _showTrendInfoDialog(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                ],
+              ),
+              const SizedBox(height: 12),
 
-            if (isLoading && trendPercentage == 0.0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: 130,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else ...[
+              if (isLoading && trendPercentage == 0.0)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerBox(width: 70, height: 32, borderRadius: BorderRadius.all(Radius.circular(12))),
+                      SizedBox(height: 10),
+                      ShimmerBox(width: 130, height: 14),
+                    ],
+                  ),
+                )
+              else ...[
               // Large Trend Percentage Badge
               Row(
                 children: [
@@ -173,8 +158,9 @@ class TrendCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showTrendInfoDialog(BuildContext context) {
     AppHaptics.contextClick();

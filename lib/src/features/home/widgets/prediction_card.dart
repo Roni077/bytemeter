@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_dimens.dart';
 import '../../../core/utils/data_size.dart';
 import '../../../core/utils/haptics.dart';
+import '../../../core/widgets/pressable_card.dart';
+import '../../../core/widgets/shimmer_box.dart';
 import '../../../data/models/enums.dart';
 
 /// Card displaying the 4-week weighted end-of-day data prediction and remaining forecast.
@@ -28,80 +31,62 @@ class PredictionCard extends StatelessWidget {
     final remainingSize = DataSize(remainingBytes);
     final parts = predictedSize.toParts(base: metricBase);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row with Icon and Info Tooltip
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.secondaryContainer.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.auto_graph_rounded,
-                    size: 20,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'END-OF-DAY FORECAST',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      letterSpacing: 1.1,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurfaceVariant,
+    return PressableCard(
+      onTap: () => _showPredictionInfoDialog(context),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimens.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Row with Icon and Info Tooltip
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppDimens.sm),
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.auto_graph_rounded,
+                      size: 20,
+                      color: colorScheme.onSecondaryContainer,
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'END-OF-DAY FORECAST',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  Icon(
                     Icons.info_outline_rounded,
                     size: 18,
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 18,
-                  onPressed: () => _showPredictionInfoDialog(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                ],
+              ),
+              const SizedBox(height: 12),
 
-            if (isLoading && predictedBytes == 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 90,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: 140,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else ...[
+              if (isLoading && predictedBytes == 0)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerBox(width: 90, height: 32),
+                      SizedBox(height: 10),
+                      ShimmerBox(width: 140, height: 14),
+                    ],
+                  ),
+                )
+              else ...[
               // Large 3-Part Formatted Prediction Value
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -160,8 +145,9 @@ class PredictionCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showPredictionInfoDialog(BuildContext context) {
     AppHaptics.contextClick();

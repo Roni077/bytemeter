@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bytemeter/src/data/models/enums.dart';
+import 'app_dimens.dart';
 import 'color_schemes.dart';
 import 'typography.dart';
 
@@ -63,7 +64,7 @@ class AppTheme {
         elevation: 0,
         color: colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppDimens.borderRadiusLg,
           side: BorderSide(
             color: colorScheme.outlineVariant.withValues(alpha: 0.3),
             width: 1,
@@ -72,7 +73,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppDimens.borderRadiusMd,
         ),
       ),
     );
@@ -125,7 +126,7 @@ class AppTheme {
         elevation: 0,
         color: amoledScheme.surfaceContainer,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppDimens.borderRadiusLg,
           side: BorderSide(
             color: amoledScheme.outlineVariant.withValues(alpha: 0.3),
             width: 1,
@@ -134,7 +135,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppDimens.borderRadiusMd,
         ),
       ),
     );
