@@ -1,18 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../core/providers/core_providers.dart';
+import '../../core/utils/date_utils.dart';
 import '../../core/utils/haptics.dart';
-import '../charts/scrollable_bar_chart.dart';
 import 'history_controller.dart';
 import 'history_state.dart';
 import 'widgets/app_list_view.dart';
-import 'widgets/history_filter_bottom_sheet.dart';
-import 'widgets/history_legend_badge.dart';
-import 'widgets/hour_list_view.dart';
 
-/// 90-Day Historical Network Analytics Screen with interactive fling timeline,
-/// dual-query comparison engine, ranked application breakdown, and 2-hour interval time buckets.
+/// App Data Usages Screen displaying ranked application bandwidth usage separated by network type.
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({
     super.key,
@@ -22,26 +19,6 @@ class HistoryScreen extends ConsumerWidget {
   /// Optional scroll controller to coordinate scroll-to-top actions.
   final ScrollController? scrollController;
 
-  void _openFilterBottomSheet(BuildContext context, WidgetRef ref) {
-    final state = ref.read(historyControllerProvider);
-    final controller = ref.read(historyControllerProvider.notifier);
-
-    HistoryFilterBottomSheet.show(
-      context: context,
-      primaryQuery: state.primaryQuery,
-      secondaryQuery: state.secondaryQuery,
-      isComparisonEnabled: state.isComparisonEnabled,
-      installedApps: state.installedApps,
-      onApply: (primary, secondary, enabled) {
-        controller.updatePrimaryQuery(primary);
-        controller.updateSecondaryQuery(secondary, isComparisonEnabled: enabled);
-      },
-      onReset: () {
-        controller.resetFilters();
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -50,9 +27,6 @@ class HistoryScreen extends ConsumerWidget {
     final controller = ref.read(historyControllerProvider.notifier);
     final prefsRepo = ref.watch(preferencesRepositoryProvider);
     final prefs = prefsRepo.current;
-
-    final primaryLabel = historyState.primaryQuery.networkType?.displayName ?? 'Primary';
-    final secondaryLabel = historyState.secondaryQuery.networkType?.displayName ?? 'Secondary';
 
     return Scaffold(
       extendBodyBehindAppBar: prefs.enableBlur,
@@ -82,86 +56,92 @@ class HistoryScreen extends ConsumerWidget {
             bottom: MediaQuery.paddingOf(context).bottom + 96,
           ),
           children: [
-            // 1. 90-Day Fling-Scrollable Timeline Bar Chart
+            // Date Navigator
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: SizedBox(
-                height: 260,
-                child: historyState.isLoadingTimeline && historyState.timelineData.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : ScrollableBarChart(
-                        historyData: historyState.timelineData,
-                        selectedDate: historyState.selectedDate,
-                        onDateSelected: (date, data) {
-                          controller.selectDate(date, debounce: true);
-                        },
-                      ),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded),
+                    onPressed: () {
+                      AppHaptics.selectionTick();
+                      controller.adjustDateByDays(-1);
+                    },
+                  ),
+                  Text(
+                    _formatDate(historyState.selectedDate),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded),
+                    onPressed: AppDateUtils.startOfDay(historyState.selectedDate)
+                            .isBefore(AppDateUtils.startOfDay(DateTime.now()))
+                        ? () {
+                            AppHaptics.selectionTick();
+                            controller.adjustDateByDays(1);
+                          }
+                        : null,
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 8),
-
-            // 2. Dual Query Legend Header & Filter Badges
-            HistoryLegendBadge(
-              primaryQuery: historyState.primaryQuery,
-              secondaryQuery: historyState.secondaryQuery,
-              isComparisonEnabled: historyState.isComparisonEnabled,
-              onOpenFilters: () => _openFilterBottomSheet(context, ref),
-              onClearAppFilter: () => controller.clearAppFilter(),
-            ),
-
-            const SizedBox(height: 12),
-
-            // 3. Segmented View Tab Switch (Apps Breakdown vs 2-Hour Intervals)
+            // Segmented View Tab Switch (All | System | User)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: SegmentedButton<HistoryViewTab>(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: SegmentedButton<AppFilterType>(
                 segments: const [
-                  ButtonSegment<HistoryViewTab>(
-                    value: HistoryViewTab.apps,
-                    label: Text('Apps Breakdown'),
-                    icon: Icon(Icons.apps_rounded, size: 16),
+                  ButtonSegment<AppFilterType>(
+                    value: AppFilterType.all,
+                    label: Text('All'),
                   ),
-                  ButtonSegment<HistoryViewTab>(
-                    value: HistoryViewTab.hours,
-                    label: Text('2-Hour Intervals'),
-                    icon: Icon(Icons.access_time_rounded, size: 16),
+                  ButtonSegment<AppFilterType>(
+                    value: AppFilterType.system,
+                    label: Text('System'),
+                  ),
+                  ButtonSegment<AppFilterType>(
+                    value: AppFilterType.user,
+                    label: Text('User'),
                   ),
                 ],
-                selected: {historyState.activeTab},
+                selected: {historyState.appFilter},
                 onSelectionChanged: (selected) {
                   AppHaptics.selectionTick();
-                  controller.switchViewTab(selected.first);
+                  controller.setAppFilter(selected.first);
                 },
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // 4. Detail Breakdown Body (Apps or Hours)
-            if (historyState.activeTab == HistoryViewTab.apps) ...[
-              AppListView(
-                apps: historyState.appBreakdown,
-                isLoading: historyState.isLoadingDetails,
-                isComparisonActive: historyState.isComparisonEnabled,
-                primaryLabel: primaryLabel,
-                secondaryLabel: secondaryLabel,
-                onQuickFilter: (app) => controller.setQuickFilterApp(app),
-                onLaunchApp: (pkg) => controller.launchApp(pkg),
-              ),
-            ] else ...[
-              HourListView(
-                buckets: historyState.hourlyBuckets,
-                isLoading: historyState.isLoadingDetails,
-                isComparisonActive: historyState.isComparisonEnabled,
-                primaryLabel: primaryLabel,
-                secondaryLabel: secondaryLabel,
-              ),
-            ],
+            AppListView(
+              apps: historyState.appBreakdown,
+              isLoading: historyState.isLoadingDetails,
+              isComparisonActive: true,
+              primaryLabel: 'Mobile Data',
+              secondaryLabel: 'Wi-Fi',
+              onQuickFilter: (app) {}, // Removed filtering logic for simplicity
+              onLaunchApp: (pkg) => controller.launchApp(pkg),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final today = AppDateUtils.startOfDay(DateTime.now());
+    final selected = AppDateUtils.startOfDay(date);
+    if (today == selected) {
+      return 'Today';
+    } else if (today.subtract(const Duration(days: 1)) == selected) {
+      return 'Yesterday';
+    } else {
+      return DateFormat.yMMMd().format(date);
+    }
   }
 
   AppBar _buildAppBar(
@@ -172,19 +152,12 @@ class HistoryScreen extends ConsumerWidget {
     bool hasBlur,
   ) {
     return AppBar(
-      title: const Text('History & Analytics'),
+      title: const Text('App Data Usages'),
       backgroundColor: hasBlur
           ? colorScheme.surface.withValues(alpha: 0.7)
           : colorScheme.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.tune_rounded),
-          tooltip: 'Filter & Compare',
-          onPressed: () => _openFilterBottomSheet(context, ref),
-        ),
-      ],
     );
   }
 }

@@ -9,6 +9,7 @@ class AppInfo {
     required this.label,
     this.iconBytes,
     this.isSpecial = false,
+    this.isSystemApp = false,
   });
 
   /// Deserializes a map received from native app inspection queries.
@@ -23,6 +24,7 @@ class AppInfo {
             ? Uint8List.fromList(rawBytes.cast<int>())
             : null;
     final isSpecial = map['isSpecial'] as bool? ?? (uid < 0);
+    final isSystemApp = map['isSystemApp'] as bool? ?? (uid < 0);
 
     return AppInfo(
       uid: uid,
@@ -30,6 +32,7 @@ class AppInfo {
       label: label,
       iconBytes: iconBytes,
       isSpecial: isSpecial,
+      isSystemApp: isSystemApp,
     );
   }
 
@@ -38,6 +41,7 @@ class AppInfo {
   final String label;
   final Uint8List? iconBytes;
   final bool isSpecial;
+  final bool isSystemApp;
 
   AppInfo copyWith({
     int? uid,
@@ -45,6 +49,7 @@ class AppInfo {
     String? label,
     Uint8List? iconBytes,
     bool? isSpecial,
+    bool? isSystemApp,
   }) {
     return AppInfo(
       uid: uid ?? this.uid,
@@ -52,6 +57,7 @@ class AppInfo {
       label: label ?? this.label,
       iconBytes: iconBytes ?? this.iconBytes,
       isSpecial: isSpecial ?? this.isSpecial,
+      isSystemApp: isSystemApp ?? this.isSystemApp,
     );
   }
 
@@ -62,6 +68,7 @@ class AppInfo {
       'label': label,
       'iconBytes': iconBytes,
       'isSpecial': isSpecial,
+      'isSystemApp': isSystemApp,
     };
   }
 

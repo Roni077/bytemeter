@@ -44,22 +44,24 @@ class AppListHelper(private val context: Context) {
             } catch (e: Exception) {
                 appInfo.packageName
             }
+            val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
 
             mapOf(
                 "uid" to appInfo.uid,
                 "packageName" to appInfo.packageName,
                 "label" to label,
                 "iconBytes" to null,
-                "isSpecial" to false
+                "isSpecial" to false,
+                "isSystemApp" to isSystemApp
             )
         }.distinctBy { it["packageName"] }.toMutableList()
 
         val specialApps = listOf(
-            mapOf("uid" to NetworkStatsHelper.UID_ALL, "packageName" to "system.all_apps", "label" to "All Apps", "iconBytes" to null, "isSpecial" to true),
-            mapOf("uid" to NetworkStatsHelper.UID_TETHERING, "packageName" to "system.tethering", "label" to "Tethering & Hotspot", "iconBytes" to null, "isSpecial" to true),
-            mapOf("uid" to NetworkStatsHelper.UID_REMOVED, "packageName" to "system.removed_apps", "label" to "Removed Apps", "iconBytes" to null, "isSpecial" to true),
-            mapOf("uid" to NetworkStatsHelper.UID_OTHER_USERS, "packageName" to "system.other_users", "label" to "Other Users", "iconBytes" to null, "isSpecial" to true),
-            mapOf("uid" to NetworkStatsHelper.UID_UNKNOWN, "packageName" to "system.unknown", "label" to "Unknown Services", "iconBytes" to null, "isSpecial" to true)
+            mapOf("uid" to NetworkStatsHelper.UID_ALL, "packageName" to "system.all_apps", "label" to "All Apps", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true),
+            mapOf("uid" to NetworkStatsHelper.UID_TETHERING, "packageName" to "system.tethering", "label" to "Tethering & Hotspot", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true),
+            mapOf("uid" to NetworkStatsHelper.UID_REMOVED, "packageName" to "system.removed_apps", "label" to "Removed Apps", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true),
+            mapOf("uid" to NetworkStatsHelper.UID_OTHER_USERS, "packageName" to "system.other_users", "label" to "Other Users", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true),
+            mapOf("uid" to NetworkStatsHelper.UID_UNKNOWN, "packageName" to "system.unknown", "label" to "Unknown Services", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true)
         )
 
         specialApps + appList
@@ -67,11 +69,11 @@ class AppListHelper(private val context: Context) {
 
     suspend fun getAppInfoByUid(uid: Int): Map<String, Any?> = withContext(Dispatchers.IO) {
         when (uid) {
-            NetworkStatsHelper.UID_ALL -> mapOf("uid" to uid, "packageName" to "system.all_apps", "label" to "All Apps", "iconBytes" to null, "isSpecial" to true)
-            NetworkStatsHelper.UID_TETHERING -> mapOf("uid" to uid, "packageName" to "system.tethering", "label" to "Tethering & Hotspot", "iconBytes" to null, "isSpecial" to true)
-            NetworkStatsHelper.UID_REMOVED -> mapOf("uid" to uid, "packageName" to "system.removed_apps", "label" to "Removed Apps", "iconBytes" to null, "isSpecial" to true)
-            NetworkStatsHelper.UID_OTHER_USERS -> mapOf("uid" to uid, "packageName" to "system.other_users", "label" to "Other Users", "iconBytes" to null, "isSpecial" to true)
-            NetworkStatsHelper.UID_UNKNOWN -> mapOf("uid" to uid, "packageName" to "system.unknown", "label" to "Unknown Services", "iconBytes" to null, "isSpecial" to true)
+            NetworkStatsHelper.UID_ALL -> mapOf("uid" to uid, "packageName" to "system.all_apps", "label" to "All Apps", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true)
+            NetworkStatsHelper.UID_TETHERING -> mapOf("uid" to uid, "packageName" to "system.tethering", "label" to "Tethering & Hotspot", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true)
+            NetworkStatsHelper.UID_REMOVED -> mapOf("uid" to uid, "packageName" to "system.removed_apps", "label" to "Removed Apps", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true)
+            NetworkStatsHelper.UID_OTHER_USERS -> mapOf("uid" to uid, "packageName" to "system.other_users", "label" to "Other Users", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true)
+            NetworkStatsHelper.UID_UNKNOWN -> mapOf("uid" to uid, "packageName" to "system.unknown", "label" to "Unknown Services", "iconBytes" to null, "isSpecial" to true, "isSystemApp" to true)
             else -> {
                 val packages = try {
                     packageManager.getPackagesForUid(uid)
@@ -91,12 +93,14 @@ class AppListHelper(private val context: Context) {
                         null
                     }
                     val label = appInfo?.loadLabel(packageManager)?.toString() ?: pkg
+                    val isSystemApp = appInfo?.let { (it.flags and ApplicationInfo.FLAG_SYSTEM) != 0 } ?: false
                     mapOf(
                         "uid" to uid,
                         "packageName" to pkg,
                         "label" to label,
                         "iconBytes" to null,
-                        "isSpecial" to false
+                        "isSpecial" to false,
+                        "isSystemApp" to isSystemApp
                     )
                 } else {
                     mapOf(
@@ -104,7 +108,8 @@ class AppListHelper(private val context: Context) {
                         "packageName" to "uid_$uid",
                         "label" to "UID $uid",
                         "iconBytes" to null,
-                        "isSpecial" to (uid < 0)
+                        "isSpecial" to (uid < 0),
+                        "isSystemApp" to (uid < 0)
                     )
                 }
             }
