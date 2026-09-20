@@ -1,52 +1,46 @@
 import 'package:flutter/foundation.dart';
-import '../../data/models/enums.dart';
 import '../../data/models/traffic_snapshot.dart';
 import '../../data/models/usage_data.dart';
-import '../charts/app_usage_bar_chart.dart';
 import '../charts/weekly_bar_chart.dart';
 
 /// Immutable UI state for the ByteMeter Home dashboard.
 @immutable
 class HomeState {
   HomeState({
-    this.selectedNetworkType = NetworkType.mobile,
-    UsageData? todayUsage,
-    this.predictedBytes = 0,
-    this.trendPercentage = 0.0,
+    UsageData? todayMobileUsage,
+    UsageData? todayWifiUsage,
+    this.totalMonthCellularBytes = 0,
+    this.totalMonthWifiBytes = 0,
     this.weekData = const <WeeklyDayData>[],
     this.selectedDayIndex,
-    this.topApps = const <AppUsageBarData>[],
     TrafficSnapshot? currentSpeed,
     this.hasUsagePermission = true,
     this.isLoading = false,
     this.isTodayUsageLoading = false,
-    this.isTopAppsLoading = false,
     this.isWeeklyLoading = false,
-    this.isForecastLoading = false,
+    this.isMonthlyLoading = false,
     this.errorMessage,
-  })  : todayUsage = todayUsage ?? UsageData(),
+  })  : todayMobileUsage = todayMobileUsage ?? UsageData(),
+        todayWifiUsage = todayWifiUsage ?? UsageData(),
         currentSpeed = currentSpeed ?? TrafficSnapshot.zero();
 
-  /// Currently selected network interface (Mobile Cellular vs. Wi-Fi).
-  final NetworkType selectedNetworkType;
+  /// Today's cellular bandwidth usage.
+  final UsageData todayMobileUsage;
 
-  /// Today's aggregated bandwidth usage.
-  final UsageData todayUsage;
+  /// Today's Wi-Fi bandwidth usage.
+  final UsageData todayWifiUsage;
 
-  /// End-of-day predicted bandwidth consumption in bytes.
-  final int predictedBytes;
+  /// Total cellular bandwidth consumed across the current month.
+  final int totalMonthCellularBytes;
 
-  /// 7-day moving average trend percentage (+X% or -X%).
-  final double trendPercentage;
+  /// Total Wi-Fi bandwidth consumed across the current month.
+  final int totalMonthWifiBytes;
 
   /// 7-day Monday through Sunday stacked usage breakdown for the current week.
   final List<WeeklyDayData> weekData;
 
   /// Highlighted day index in the weekly bar chart (0 = Monday ... 6 = Sunday).
   final int? selectedDayIndex;
-
-  /// Top bandwidth-consuming apps today.
-  final List<AppUsageBarData> topApps;
 
   /// Instantaneous sub-second transfer rate snapshot.
   final TrafficSnapshot currentSpeed;
@@ -60,23 +54,14 @@ class HomeState {
   /// Whether today's primary usage metric is actively loading.
   final bool isTodayUsageLoading;
 
-  /// Whether the top applications preview is actively loading.
-  final bool isTopAppsLoading;
-
   /// Whether the weekly stacked bar chart breakdown is actively loading.
   final bool isWeeklyLoading;
 
-  /// Whether predictive end-of-day forecast and trend metrics are actively loading.
-  final bool isForecastLoading;
+  /// Whether the monthly usage totals are actively loading.
+  final bool isMonthlyLoading;
 
   /// Optional error message if an operation failed.
   final String? errorMessage;
-
-  /// Whether today's trend indicates an accelerated burn rate compared to baseline.
-  bool get isTrendAccelerated => trendPercentage > 0.05;
-
-  /// Whether today's trend indicates a decelerated burn rate compared to baseline.
-  bool get isTrendDecelerated => trendPercentage < -0.05;
 
   /// Total bandwidth consumed across the entire current week.
   int get totalWeekBytes =>
@@ -91,46 +76,41 @@ class HomeState {
       weekData.fold<int>(0, (sum, day) => sum + day.wifiBytes);
 
   HomeState copyWith({
-    NetworkType? selectedNetworkType,
-    UsageData? todayUsage,
-    int? predictedBytes,
-    double? trendPercentage,
+    UsageData? todayMobileUsage,
+    UsageData? todayWifiUsage,
+    int? totalMonthCellularBytes,
+    int? totalMonthWifiBytes,
     List<WeeklyDayData>? weekData,
     int? selectedDayIndex,
     bool clearSelectedDay = false,
-    List<AppUsageBarData>? topApps,
     TrafficSnapshot? currentSpeed,
     bool? hasUsagePermission,
     bool? isLoading,
     bool? isTodayUsageLoading,
-    bool? isTopAppsLoading,
     bool? isWeeklyLoading,
-    bool? isForecastLoading,
+    bool? isMonthlyLoading,
     String? errorMessage,
     bool clearError = false,
   }) {
     final nextTodayLoading = isTodayUsageLoading ?? this.isTodayUsageLoading;
-    final nextAppsLoading = isTopAppsLoading ?? this.isTopAppsLoading;
     final nextWeeklyLoading = isWeeklyLoading ?? this.isWeeklyLoading;
-    final nextForecastLoading = isForecastLoading ?? this.isForecastLoading;
+    final nextMonthlyLoading = isMonthlyLoading ?? this.isMonthlyLoading;
     final nextOverallLoading = isLoading ??
-        (nextTodayLoading || nextAppsLoading || nextWeeklyLoading || nextForecastLoading);
+        (nextTodayLoading || nextWeeklyLoading || nextMonthlyLoading);
 
     return HomeState(
-      selectedNetworkType: selectedNetworkType ?? this.selectedNetworkType,
-      todayUsage: todayUsage ?? this.todayUsage,
-      predictedBytes: predictedBytes ?? this.predictedBytes,
-      trendPercentage: trendPercentage ?? this.trendPercentage,
+      todayMobileUsage: todayMobileUsage ?? this.todayMobileUsage,
+      todayWifiUsage: todayWifiUsage ?? this.todayWifiUsage,
+      totalMonthCellularBytes: totalMonthCellularBytes ?? this.totalMonthCellularBytes,
+      totalMonthWifiBytes: totalMonthWifiBytes ?? this.totalMonthWifiBytes,
       weekData: weekData ?? this.weekData,
       selectedDayIndex: clearSelectedDay ? null : (selectedDayIndex ?? this.selectedDayIndex),
-      topApps: topApps ?? this.topApps,
       currentSpeed: currentSpeed ?? this.currentSpeed,
       hasUsagePermission: hasUsagePermission ?? this.hasUsagePermission,
       isLoading: nextOverallLoading,
       isTodayUsageLoading: nextTodayLoading,
-      isTopAppsLoading: nextAppsLoading,
       isWeeklyLoading: nextWeeklyLoading,
-      isForecastLoading: nextForecastLoading,
+      isMonthlyLoading: nextMonthlyLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -140,44 +120,40 @@ class HomeState {
       identical(this, other) ||
       other is HomeState &&
           runtimeType == other.runtimeType &&
-          selectedNetworkType == other.selectedNetworkType &&
-          todayUsage == other.todayUsage &&
-          predictedBytes == other.predictedBytes &&
-          trendPercentage == other.trendPercentage &&
+          todayMobileUsage == other.todayMobileUsage &&
+          todayWifiUsage == other.todayWifiUsage &&
+          totalMonthCellularBytes == other.totalMonthCellularBytes &&
+          totalMonthWifiBytes == other.totalMonthWifiBytes &&
           listEquals(weekData, other.weekData) &&
           selectedDayIndex == other.selectedDayIndex &&
-          listEquals(topApps, other.topApps) &&
           currentSpeed == other.currentSpeed &&
           hasUsagePermission == other.hasUsagePermission &&
           isLoading == other.isLoading &&
           isTodayUsageLoading == other.isTodayUsageLoading &&
-          isTopAppsLoading == other.isTopAppsLoading &&
           isWeeklyLoading == other.isWeeklyLoading &&
-          isForecastLoading == other.isForecastLoading &&
+          isMonthlyLoading == other.isMonthlyLoading &&
           errorMessage == other.errorMessage;
 
   @override
   int get hashCode => Object.hash(
-        selectedNetworkType,
-        todayUsage,
-        predictedBytes,
-        trendPercentage,
+        todayMobileUsage,
+        todayWifiUsage,
+        totalMonthCellularBytes,
+        totalMonthWifiBytes,
         Object.hashAll(weekData),
         selectedDayIndex,
-        Object.hashAll(topApps),
         currentSpeed,
         hasUsagePermission,
         isLoading,
         isTodayUsageLoading,
-        isTopAppsLoading,
         isWeeklyLoading,
-        isForecastLoading,
+        isMonthlyLoading,
         errorMessage,
       );
 
   @override
   String toString() {
-    return 'HomeState(network: $selectedNetworkType, today: $todayUsage, predicted: $predictedBytes, trend: $trendPercentage%, loading: $isLoading, todayLoading: $isTodayUsageLoading, appsLoading: $isTopAppsLoading, weeklyLoading: $isWeeklyLoading, forecastLoading: $isForecastLoading)';
+    return 'HomeState(todayMobile: $todayMobileUsage, todayWifi: $todayWifiUsage, monthCell: $totalMonthCellularBytes, monthWifi: $totalMonthWifiBytes, loading: $isLoading, todayLoading: $isTodayUsageLoading, weeklyLoading: $isWeeklyLoading, monthlyLoading: $isMonthlyLoading)';
   }
 }
 

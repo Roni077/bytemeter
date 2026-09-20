@@ -108,64 +108,8 @@ void main() {
     prefsRepo = PreferencesRepository(prefs: prefs, bridge: bridge);
   });
 
-  group('HomeController - Mathematical Models & Analytics', () {
-    test('4-Week Weighted Prediction with Historical Data', () async {
-      final controller = HomeController(
-        usageRepo: usageRepo,
-        prefsRepo: prefsRepo,
-      );
-
-      final now = DateTime(2026, 9, 10, 14, 0, 0); // 2:00 PM (14 hours elapsed)
-      const todayUsageBytes = 500000000; // 500 MB
-
-      final prediction = await controller.calculate4WeekPrediction(
-        now: now,
-        networkType: NetworkType.mobile,
-        todayUsageBytes: todayUsageBytes,
-      );
-
-      // Prediction should be greater than or equal to current usage
-      expect(prediction, greaterThanOrEqualTo(todayUsageBytes));
-    });
-
-    test('4-Week Weighted Prediction with zero historical data falls back to linear time extrapolation', () async {
-      final emptyBridge = FakeNativeBridge(deviceUsageTotal: 0);
-      final emptyUsageRepo = NetworkUsageRepository(bridge: emptyBridge);
-      final controller = HomeController(
-        usageRepo: emptyUsageRepo,
-        prefsRepo: prefsRepo,
-      );
-
-      final now = DateTime(2026, 9, 10, 12, 0, 0); // Midday (12h elapsed = 720 min -> factor 2.0)
-      const todayUsageBytes = 200000000; // 200 MB
-
-      final prediction = await controller.calculate4WeekPrediction(
-        now: now,
-        networkType: NetworkType.mobile,
-        todayUsageBytes: todayUsageBytes,
-      );
-
-      // Midday with factor 1440 / 720 = 2.0 => 400 MB
-      expect(prediction, equals(400000000));
-    });
-
-    test('7-Day Moving Trend Percentage Calculation', () async {
-      final controller = HomeController(
-        usageRepo: usageRepo,
-        prefsRepo: prefsRepo,
-      );
-
-      final now = DateTime(2026, 9, 10, 15, 0, 0);
-      final trend = await controller.calculate7DayTrend(
-        now: now,
-        networkType: NetworkType.mobile,
-      );
-
-      // Trend should be computed as a double precision value
-      expect(trend, isA<double>());
-    });
-
-    test('HomeController loads state, handles network changes, and selects day', () async {
+  group('HomeController - Core Data Loading & Interactions', () {
+    test('HomeController loads dual usage state and selects day', () async {
       final controller = HomeController(
         usageRepo: usageRepo,
         prefsRepo: prefsRepo,
@@ -175,12 +119,17 @@ void main() {
 
       expect(controller.state.isLoading, isFalse);
       expect(controller.state.hasUsagePermission, isTrue);
-      expect(controller.state.weekData.length, equals(7));
-      expect(controller.state.topApps.isNotEmpty, isTrue);
+      
+      // Dual Network Usage
+      expect(controller.state.todayMobileUsage.totalBytes, greaterThanOrEqualTo(0));
+      expect(controller.state.todayWifiUsage.totalBytes, greaterThanOrEqualTo(0));
+      
+      // Monthly Usage
+      expect(controller.state.totalMonthCellularBytes, greaterThanOrEqualTo(0));
+      expect(controller.state.totalMonthWifiBytes, greaterThanOrEqualTo(0));
 
-      // Toggle to Wi-Fi
-      await controller.setNetworkType(NetworkType.wifi);
-      expect(controller.state.selectedNetworkType, equals(NetworkType.wifi));
+      // Weekly Breakdown
+      expect(controller.state.weekData.length, equals(7));
 
       // Select specific day in week
       controller.selectDay(2); // Wednesday

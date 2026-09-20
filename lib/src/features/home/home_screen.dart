@@ -5,13 +5,8 @@ import '../../core/providers/core_providers.dart';
 import '../../core/utils/data_size.dart';
 import '../../core/utils/haptics.dart';
 import 'home_controller.dart';
-import 'widgets/full_app_usage_sheet.dart';
-import 'widgets/hero_geometric_gauge.dart';
-import 'widgets/network_type_selector.dart';
+import 'widgets/network_usage_summary_card.dart';
 import 'widgets/permission_banner.dart';
-import 'widgets/prediction_card.dart';
-import 'widgets/top_apps_card.dart';
-import 'widgets/trend_card.dart';
 import 'widgets/weekly_chart_card.dart';
 
 /// Main interactive Home Dashboard screen featuring live speed monitoring,
@@ -98,71 +93,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               const SizedBox(height: 16),
             ],
 
-            // Network Selector Pill Toggle (Mobile vs Wi-Fi)
-            NetworkTypeSelector(
-              selectedType: homeState.selectedNetworkType,
-              onChanged: (newType) => controller.setNetworkType(newType),
-            ),
+            // Live Speed Badge
+            const Center(child: _LiveSpeedSecondaryBadge()),
             const SizedBox(height: 20),
 
-            // Hero 12-Sided Geometric Cookie Gauge with Live Speed Badge
-            Center(
-              child: HeroGeometricGauge(
-                dataSize: DataSize(homeState.todayUsage.totalBytes),
-                networkType: homeState.selectedNetworkType,
-                label: "TODAY'S USAGE",
-                secondaryWidget: const _LiveSpeedSecondaryBadge(),
-                size: 280,
-                onTap: () {
-                  AppHaptics.contextClick();
-                  controller.loadDashboardData(refresh: true);
-                },
-              ),
+            // Mobile Data Summary Card
+            NetworkUsageSummaryCard(
+              title: 'Mobile Data',
+              icon: Icons.cell_tower,
+              todayBytes: homeState.todayMobileUsage.totalBytes,
+              weekBytes: homeState.totalWeekCellularBytes,
+              monthBytes: homeState.totalMonthCellularBytes,
+            ),
+            const SizedBox(height: 16),
+
+            // Wi-Fi Data Summary Card
+            NetworkUsageSummaryCard(
+              title: 'Wi-Fi',
+              icon: Icons.wifi,
+              todayBytes: homeState.todayWifiUsage.totalBytes,
+              weekBytes: homeState.totalWeekWifiBytes,
+              monthBytes: homeState.totalMonthWifiBytes,
             ),
             const SizedBox(height: 24),
-
-            // Forecast & Trend Row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: PredictionCard(
-                    predictedBytes: homeState.predictedBytes,
-                    todayBytes: homeState.todayUsage.totalBytes,
-                    metricBase: prefs.metricBase,
-                    isLoading: homeState.isForecastLoading,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TrendCard(
-                    trendPercentage: homeState.trendPercentage,
-                    isLoading: homeState.isForecastLoading,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Top Data-Consuming Apps Today
-            TopAppsCard(
-              apps: homeState.topApps,
-              totalBytes: homeState.todayUsage.totalBytes,
-              isLoading: homeState.isTopAppsLoading,
-              onViewAll: () {
-                FullAppUsageSheet.show(
-                  context: context,
-                  networkType: homeState.selectedNetworkType,
-                );
-              },
-              onAppTap: (app) {
-                AppHaptics.contextClick();
-                if (app.packageName.isNotEmpty && !app.packageName.startsWith('uid_')) {
-                  controller.launchApp(app.packageName);
-                }
-              },
-            ),
-            const SizedBox(height: 16),
 
             // Weekly Mon-Sun Interactive Stacked Bar Chart
             WeeklyChartCard(
