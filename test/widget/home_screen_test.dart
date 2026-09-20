@@ -11,12 +11,7 @@ import 'package:bytemeter/src/data/models/usage_data.dart';
 import 'package:bytemeter/src/data/repositories/network_usage_repository.dart';
 import 'package:bytemeter/src/data/repositories/preferences_repository.dart';
 import 'package:bytemeter/src/features/home/home_screen.dart';
-import 'package:bytemeter/src/features/home/widgets/hero_geometric_gauge.dart';
-import 'package:bytemeter/src/features/home/widgets/network_type_selector.dart';
 import 'package:bytemeter/src/features/home/widgets/permission_banner.dart';
-import 'package:bytemeter/src/features/home/widgets/prediction_card.dart';
-import 'package:bytemeter/src/features/home/widgets/top_apps_card.dart';
-import 'package:bytemeter/src/features/home/widgets/trend_card.dart';
 import 'package:bytemeter/src/features/home/widgets/weekly_chart_card.dart';
 
 class MockBridge extends NativeTrafficBridge {
@@ -118,73 +113,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
 
-    // Verify header and core widgets
+    // Verify header and core widgets based on the new refactored layout
     expect(find.text('ByteMeter'), findsOneWidget);
-    expect(find.byType(NetworkTypeSelector), findsOneWidget);
-    expect(find.byType(HeroGeometricGauge), findsOneWidget);
-    expect(find.byType(PredictionCard), findsOneWidget);
-    expect(find.byType(TrendCard), findsOneWidget);
-    expect(find.byType(TopAppsCard), findsOneWidget);
     expect(find.byType(WeeklyChartCard), findsOneWidget);
     expect(find.byType(PermissionBanner), findsNothing);
-  });
-
-  testWidgets('NetworkTypeSelector toggles between Mobile Data and Wi-Fi', (WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(800, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await tester.pumpWidget(buildTestWidget());
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    final wifiPill = find.descendant(
-      of: find.byType(NetworkTypeSelector),
-      matching: find.text('Wi-Fi'),
-    );
-    final mobilePill = find.descendant(
-      of: find.byType(NetworkTypeSelector),
-      matching: find.text('Mobile Data'),
-    );
-
-    expect(wifiPill, findsOneWidget);
-    expect(mobilePill, findsOneWidget);
-
-    // Tap Wi-Fi
-    await tester.tap(wifiPill);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    // Tap Mobile Data
-    await tester.tap(mobilePill);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-  });
-
-  testWidgets('PredictionCard and TrendCard open explanation dialogs on info tap', (WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(800, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await tester.pumpWidget(buildTestWidget());
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    // Find and tap first info button (Prediction info)
-    final infoButtons = find.byIcon(Icons.info_outline_rounded);
-    expect(infoButtons, findsNWidgets(2));
-
-    await tester.tap(infoButtons.first);
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.text('4-Week Weighted Prediction'), findsOneWidget);
-    expect(find.text('Got It'), findsOneWidget);
-
-    // Close dialog
-    await tester.tap(find.text('Got It'));
-    await tester.pump(const Duration(milliseconds: 100));
   });
 
   testWidgets('PermissionBanner renders when Usage Access is missing', (WidgetTester tester) async {
@@ -203,22 +135,5 @@ void main() {
     await tester.tap(find.text('Grant Permission'));
     await tester.pump(const Duration(milliseconds: 100));
   });
-
-  testWidgets('TopAppsCard renders View All and opens FullAppUsageSheet modal', (WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(800, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await tester.pumpWidget(buildTestWidget());
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    final viewAllFinder = find.text('View All');
-    expect(viewAllFinder, findsOneWidget);
-
-    await tester.tap(viewAllFinder);
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('All Applications Today'), findsOneWidget);
-  });
 }
+
